@@ -9,7 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: satu kolom ala ChatGPT mobile. Header (menu, pilih API, obrolan baru), thread di tengah, composer menempel di bawah. */
+/* Layout: satu kolom ala ChatGPT mobile. Header (menu, merek, obrolan baru), konten di tengah, composer di bawah.
+   Halaman alat punya warna sendiri lewat --tool. */
 :root{
   --bg:#fafafa; --surface:#ffffff; --fg:#161618; --muted:#6c6c72; --line:#ebebee;
   --accent:#0fb89b; --accent-fg:#ffffff; --indigo:#5a4fe0; --bubble:#f0f0f2;
@@ -38,10 +39,7 @@
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
-body{
-  background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;
-  overflow:hidden;
-}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.5;overflow:hidden}
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 80% 40% at 50% 0%,var(--glow),transparent 70%);
@@ -49,6 +47,9 @@ body::before{
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
 [hidden]{display:none!important}
+svg{display:block;flex:none}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 #app{
   position:relative;height:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;
@@ -58,28 +59,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* header */
 header{display:flex;align-items:center;gap:10px;padding-block:calc(env(safe-area-inset-top,0px) + 12px) 8px}
-.circle{
-  width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow);
-  display:grid;place-items:center;flex:none;
+.circle{width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.brand{
+  height:44px;padding:0 16px 0 12px;border-radius:22px;background:var(--surface);box-shadow:var(--shadow);
+  color:var(--indigo);font-weight:700;font-size:16px;letter-spacing:.04em;display:flex;align-items:center;gap:8px;
 }
-.pill{
-  height:44px;padding:0 14px 0 12px;border-radius:22px;border:0;background:var(--surface);box-shadow:var(--shadow);
-  color:var(--indigo);font-weight:600;font-size:17px;display:flex;align-items:center;gap:8px;max-width:60%;
-}
-.pill span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pill .chev{opacity:.7}
 .spacer{flex:1}
-svg{display:block;flex:none}
-.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* thread */
-#scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:8px 16px;scroll-behavior:auto}
+#scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:8px 16px}
 #thread{display:flex;flex-direction:column;gap:20px}
 .msg.user{display:flex;justify-content:flex-end}
-.bubble{
-  background:var(--bubble);padding:10px 16px;border-radius:22px;max-width:86%;
-  white-space:pre-wrap;overflow-wrap:anywhere;
-}
+.bubble{background:var(--bubble);padding:10px 16px;border-radius:22px;max-width:86%;white-space:pre-wrap;overflow-wrap:anywhere}
 .ai-body{overflow-wrap:anywhere;min-width:0}
 .ai-body p{margin:0 0 .8em}
 .ai-body p:last-child{margin-bottom:0}
@@ -98,7 +89,6 @@ svg{display:block;flex:none}
 .acts button{border:0;background:none;padding:6px 8px;border-radius:10px;display:flex;align-items:center;gap:6px;font-size:14px;color:inherit}
 .acts button:hover{background:var(--bubble)}
 .acts .ic{width:19px;height:19px}
-.via{margin-left:auto;font-size:13px;padding-right:4px}
 .err{color:var(--danger);font-size:15px}
 .think{display:flex;align-items:center;gap:10px;color:var(--muted)}
 .dot{width:12px;height:12px;border-radius:50%;background:var(--fg);animation:pulse 1.1s ease-in-out infinite}
@@ -106,114 +96,166 @@ svg{display:block;flex:none}
 .shimmer{background:linear-gradient(90deg,var(--muted) 30%,var(--fg) 50%,var(--muted) 70%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 1.6s linear infinite}
 @keyframes sh{from{background-position:120% 0}to{background-position:-120% 0}}
 
-/* empty */
-#empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding-bottom:8vh}
+/* empty chat */
+#empty{position:relative;overflow:hidden;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding-bottom:6vh}
+#empty > *{position:relative;z-index:1}
+#empty .orb{position:absolute;z-index:0;width:280px;height:280px;border-radius:50%;filter:blur(28px);opacity:.55;
+  background:radial-gradient(circle at 35% 35%,color-mix(in srgb,var(--accent) 60%,transparent),color-mix(in srgb,var(--indigo) 32%,transparent) 55%,transparent 72%);
+  animation:drift 9s ease-in-out infinite}
+#empty .rings{position:absolute;z-index:0;width:210px;height:210px;border-radius:50%;border:1px solid var(--line);
+  box-shadow:0 0 0 40px color-mix(in srgb,var(--line) 45%,transparent),0 0 0 84px color-mix(in srgb,var(--line) 22%,transparent),0 0 0 130px color-mix(in srgb,var(--line) 10%,transparent)}
+#empty .spk{position:absolute;z-index:0;color:var(--accent);opacity:.7;animation:drift 6s ease-in-out infinite}
+#empty .spk.a{top:14%;left:14%;width:20px;height:20px}
+#empty .spk.b{top:26%;right:12%;width:30px;height:30px;color:var(--indigo);animation-delay:-2s}
+#empty .spk.c{bottom:20%;left:22%;width:14px;height:14px;color:var(--indigo);animation-delay:-4s}
 #empty h1{margin:0;font-size:clamp(30px,9vw,44px);letter-spacing:.04em;font-weight:700}
 #empty h1 b{color:var(--accent);font-weight:700}
 #empty p{margin:0;color:var(--muted);font-size:17px}
+@keyframes drift{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.04)}}
 
 /* footer */
 footer{padding-top:6px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
 #starters{display:flex;flex-direction:column;margin-bottom:10px}
 .starter{display:flex;align-items:center;gap:18px;padding:12px 4px;border:0;background:none;font-size:18px;color:var(--muted);text-align:left;border-radius:12px}
 .starter .ic{width:26px;height:26px;stroke-width:1.5}
-.composer{
-  display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);
-  border-radius:28px;padding:8px 8px 8px 20px;box-shadow:var(--shadow);
-}
-textarea{
-  flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;
-  resize:none;max-height:160px;height:26px;padding:9px 0;line-height:26px;
-}
+.composer{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:8px 8px 8px 20px;box-shadow:var(--shadow)}
+textarea{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;resize:none;max-height:160px;height:26px;padding:9px 0;line-height:26px}
 textarea::placeholder{color:var(--muted)}
 .send{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;flex:none;transition:opacity .15s}
 .send:disabled{opacity:.35;cursor:default}
 .send .ic{width:21px;height:21px;stroke-width:2.2}
 .note{margin:8px 0 0;text-align:center;font-size:12px;color:var(--muted)}
 
-/* drawer + sheet */
+/* drawer */
 #scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;visibility:hidden;transition:opacity .22s,visibility 0s .22s;z-index:20}
-body.drawer-open #scrim,body.sheet-open #scrim{opacity:1;visibility:visible;transition-delay:0s}
+body.drawer-open #scrim{opacity:1;visibility:visible;transition-delay:0s}
 #drawer{
-  position:fixed;left:0;top:0;bottom:0;width:min(84vw,320px);background:var(--surface);z-index:30;
-  display:flex;flex-direction:column;transform:translateX(-102%);visibility:hidden;
-  transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s;
+  position:fixed;left:0;top:0;bottom:0;width:min(86vw,330px);background:var(--surface);z-index:30;display:flex;flex-direction:column;
+  transform:translateX(-102%);visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s;
   padding:calc(env(safe-area-inset-top,0px) + 20px) 0 calc(env(safe-area-inset-bottom,0px) + 16px) max(0px,env(safe-area-inset-left,0px));
 }
 body.drawer-open #drawer{transform:none;visibility:visible;transition-delay:0s}
-#drawer h2{margin:0 20px 4px;font-size:26px;letter-spacing:.03em}
-#drawer .label{margin:22px 20px 6px;font-size:14px;font-weight:600;color:var(--muted)}
-#list{flex:1;min-height:0;overflow-y:auto;padding:0 8px}
-.row{display:flex;align-items:center;gap:4px;border-radius:14px;text-decoration:none;color:var(--fg)}
+#drawer h2{margin:0 20px 10px;font-size:26px;letter-spacing:.03em}
+.dscroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 8px}
+.nav{width:100%;display:flex;align-items:center;gap:14px;padding:12px;border:0;background:none;border-radius:14px;color:var(--fg);font-size:17px;text-align:left}
+.nav.cur,.nav:hover{background:var(--bubble)}
+.nav .grow{flex:1}
+.nav .chev{width:18px;height:18px;color:var(--muted);transition:transform .22s}
+.nav[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.subwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease}
+.subwrap > div{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s .26s}
+.nav[aria-expanded="true"] + .subwrap{grid-template-rows:1fr}
+.nav[aria-expanded="true"] + .subwrap > div{visibility:visible;transition-delay:0s}
+.sub{display:flex;align-items:center;gap:12px;padding:9px 12px 9px 20px;margin-left:12px;border-radius:14px;color:var(--fg);text-decoration:none;font-size:16px}
+.sub:hover,.sub.cur{background:var(--bubble)}
+.sub i{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:#fff;flex:none}
+.sub i .ic{width:17px;height:17px;stroke-width:2}
+#drawer .label{margin:18px 12px 6px;font-size:14px;font-weight:600;color:var(--muted)}
+.row{display:flex;align-items:center;gap:4px;border-radius:14px}
 .row a{flex:1;min-width:0;padding:12px;color:inherit;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:14px}
 .row.cur{background:var(--bubble)}
 .row .del{border:0;background:none;color:var(--muted);padding:10px;border-radius:10px;display:grid;place-items:center}
 .row .del .ic{width:18px;height:18px}
 .none{padding:12px;color:var(--muted)}
-.newchat{
-  margin:10px 16px 0;height:52px;border-radius:26px;border:0;background:var(--accent);color:var(--accent-fg);
-  font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;
-}
-#sheet{
-  position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:760px;margin:0 auto;background:var(--surface);
-  border-radius:26px 26px 0 0;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 16px);
-  transform:translateY(105%);visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s;
-}
-body.sheet-open #sheet{transform:none;visibility:visible;transition-delay:0s}
-#sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
-#sheet h3{margin:0 4px 8px;font-size:15px;color:var(--muted);font-weight:600}
-.opt{width:100%;display:flex;align-items:center;gap:12px;padding:14px 12px;border:0;background:none;border-radius:16px;text-align:left}
-.opt:hover{background:var(--bubble)}
-.opt .t{flex:1;min-width:0}
-.opt .t b{display:block;font-size:17px}
-.opt .t small{color:var(--muted);font-size:14px}
-.opt .ic{color:var(--accent);width:22px;height:22px;stroke-width:2.4;opacity:0}
-.opt[aria-checked="true"] .ic{opacity:1}
+.newchat{margin:10px 16px 0;height:52px;border-radius:26px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px}
 
-/* upscale view */
-#toolsView{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:8px 24px}
-#toolsView h1{margin:8px 0 4px;font-size:28px;letter-spacing:.02em}
-#toolsView .sub{margin:0 0 18px;color:var(--muted)}
-.field{display:flex;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:6px 6px 6px 18px;box-shadow:var(--shadow)}
-.field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:8px 0}
-.field input::placeholder{color:var(--muted)}
-.field button{border:0;border-radius:22px;background:var(--accent);color:var(--accent-fg);font-weight:600;padding:0 18px;height:42px;flex:none}
-.field button:disabled{opacity:.4;cursor:default}
-.shots{display:grid;grid-template-columns:1fr;gap:16px;margin-top:20px}
-.shot{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
-.shot h2{margin:0;padding:12px 16px;font-size:14px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.shot img{display:block;width:100%;max-width:100%;height:auto;background:var(--bubble);min-height:80px}
-.shot .acts{padding:8px 10px 10px;margin:0}
-.shot .acts a{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:15px;text-decoration:none}
-.status{margin-top:16px;color:var(--muted)}
-.status.err{color:var(--danger)}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
-.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:8px 14px;font-size:15px;color:var(--fg)}
-.chip[aria-checked="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.shot video{display:block;width:100%;max-width:100%;background:#000}
-.textres{padding:2px 16px 8px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
-@media (min-width:640px){.shots{grid-template-columns:1fr 1fr}}
-body.view-tools #scroll,body.view-tools footer,body.view-tools #apiBtn{display:none}
-body:not(.view-tools) #toolsView{display:none}
-.nav{display:flex;align-items:center;gap:14px;margin:8px 8px 0;padding:12px;border-radius:14px;color:var(--fg);text-decoration:none;font-size:17px}
-.nav.cur{background:var(--bubble)}
-@media (prefers-reduced-motion:reduce){
-  *{animation:none!important;transition:none!important}
+/* tool page */
+body.view-tool #scroll,body.view-tool footer{display:none}
+body:not(.view-tool) #toolView{display:none}
+#toolView{--tool:#0b9c84;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
+.hero{
+  position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 24px;
+  background:var(--surface);border:1px solid var(--line);
+  background:linear-gradient(140deg,color-mix(in srgb,var(--tool) 26%,var(--surface)),color-mix(in srgb,var(--tool) 5%,var(--surface)));
+  border:1px solid color-mix(in srgb,var(--tool) 24%,var(--line));
 }
+.hero > *{position:relative}
+.hero-dots{position:absolute!important;inset:0;background-image:radial-gradient(color-mix(in srgb,var(--tool) 45%,transparent) 1.2px,transparent 1.6px);background-size:16px 16px;
+  -webkit-mask-image:linear-gradient(200deg,#000,transparent 60%);mask-image:linear-gradient(200deg,#000,transparent 60%);opacity:.55}
+.hero-ghost{position:absolute!important;right:-22px;bottom:-26px;width:170px;height:170px;color:var(--tool);opacity:.2;transform:rotate(-10deg)}
+.fl{position:absolute!important;border-radius:50%;background:var(--tool);opacity:.32;animation:drift 7s ease-in-out infinite}
+.fl.f1{width:18px;height:18px;top:18px;right:70px}
+.fl.f2{width:30px;height:30px;top:46px;right:22px;opacity:.2;animation-delay:-2s}
+.fl.f3{width:10px;height:10px;top:96px;right:92px;animation-delay:-4s}
+.hero-badge{width:54px;height:54px;border-radius:17px;background:var(--tool);color:#fff;display:grid;place-items:center;box-shadow:0 8px 20px color-mix(in srgb,var(--tool) 40%,transparent)}
+.hero-badge .ic{width:28px;height:28px;stroke-width:1.9}
+.hero h1{margin:16px 0 4px;font-size:30px;line-height:1.15;letter-spacing:.01em}
+.hero p{margin:0;max-width:30ch;color:var(--muted);font-size:16px}
+
+.drop{
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-top:16px;padding:26px 16px;position:relative;
+  border:2px dashed color-mix(in srgb,var(--tool) 50%,var(--line));border-radius:24px;
+  background:color-mix(in srgb,var(--tool) 5%,var(--surface));cursor:pointer;transition:background .15s,transform .15s;
+}
+.drop:hover,.drop.over{background:color-mix(in srgb,var(--tool) 13%,var(--surface))}
+.drop.over{transform:scale(1.01)}
+.drop:focus-within{outline:2px solid var(--indigo);outline-offset:3px}
+.drop .up{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--tool);color:#fff;margin-bottom:4px}
+.drop b{font-size:18px}
+.drop small{color:var(--muted);font-size:14px}
+.picked{display:flex;align-items:center;gap:12px;margin-top:16px;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.picked .th{width:64px;height:64px;border-radius:14px;object-fit:cover;background:var(--bubble);flex:none}
+.picked .meta{flex:1;min-width:0}
+.picked .meta b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picked .meta small{color:var(--muted)}
+.picked .go{border:0;border-radius:21px;background:var(--tool);color:#fff;font-weight:600;padding:0 18px;height:42px;flex:none}
+.picked .go:disabled{opacity:.45;cursor:default}
+.picked .swap{border:0;background:none;color:var(--muted);padding:8px;border-radius:10px;font-size:14px;flex:none}
+.picked .swap:disabled{opacity:.4}
+.prog{margin-top:16px;padding:16px;border-radius:22px;background:var(--surface);border:1px solid var(--line)}
+.prog .row1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.prog small{color:var(--muted)}
+.prog .bar{height:6px;border-radius:3px;background:var(--bubble);overflow:hidden;margin-top:12px}
+.prog .bar i{display:block;height:100%;width:38%;border-radius:3px;background:var(--tool);animation:slide 1.2s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(270%)}}
+.status{margin-top:16px;color:var(--danger)}
+
+/* before/after */
+.cmp{margin-top:16px}
+.cmp-stage{position:relative;overflow:hidden;border-radius:22px;background:var(--bubble);touch-action:pan-y;user-select:none;-webkit-user-select:none;aspect-ratio:4/3;max-height:78vh;--pos:50%;cursor:ew-resize}
+.cmp-stage.cut{background:repeating-conic-gradient(#d9d9df 0% 25%,#f4f4f7 0% 50%) 50%/20px 20px}
+.cmp-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+.cmp-before{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.cmp-handle{position:absolute;top:0;bottom:0;left:var(--pos);width:44px;margin-left:-22px;display:grid;place-items:center;outline:none}
+.cmp-handle::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:3px;margin-left:-1.5px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18),0 0 12px rgba(0,0,0,.35)}
+.grip{position:relative;width:42px;height:42px;border-radius:50%;background:#fff;color:#222;display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.grip .ic{width:20px;height:20px;stroke-width:2.2}
+.cmp-handle:focus-visible .grip{outline:2px solid var(--indigo);outline-offset:2px}
+.tag{position:absolute;top:10px;padding:4px 10px;border-radius:12px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;letter-spacing:.04em;pointer-events:none}
+.tag.l{left:10px}.tag.r{right:10px}
+.cmp-cap{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;color:var(--muted);font-size:14px;flex-wrap:wrap}
+.cmp-cap .btns{display:flex;gap:6px}
+.mini{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;border:0;background:var(--tool);color:#fff;font-weight:600;font-size:14px;text-decoration:none}
+.mini.ghost{background:var(--bubble);color:var(--fg)}
+.mini .ic{width:17px;height:17px}
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;background:var(--bubble);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.shots{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.shot h2{margin:0;padding:12px 16px;font-size:14px;font-weight:600;color:var(--muted)}
+.shot img,.shot video{display:block;width:100%;max-width:100%;height:auto;background:var(--bubble);min-height:80px}
+.shot video{background:#000}
+.shot .acts{padding:6px 10px 10px;margin:0}
+.textres{padding:2px 16px 10px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+@media (min-width:640px){.shots{grid-template-columns:1fr 1fr}}
+
+.steps{display:grid;gap:10px;margin-top:22px}
+.step{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.step i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal;font-weight:700;font-size:14px;background:color-mix(in srgb,var(--tool) 16%,var(--surface));color:var(--tool)}
+.fine{margin:16px 4px 0;font-size:12.5px;color:var(--muted);text-align:center}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <button class="circle" id="menuBtn" aria-label="Buka riwayat obrolan">
+    <button class="circle" id="menuBtn" aria-label="Buka menu">
       <svg class="ic" viewBox="0 0 24 24"><path d="M4 9h14M4 15h9"/></svg>
     </button>
-    <button class="pill" id="apiBtn" aria-haspopup="dialog" aria-label="Pilih AI">
-      <svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
-      <span id="apiName">Gemini</span>
-      <svg class="ic chev" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 9l6 6 6-6"/></svg>
-    </button>
+    <div class="brand">
+      <svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none;width:20px;height:20px"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
+      CLARITY AI
+    </div>
     <span class="spacer"></span>
     <button class="circle" id="newTop" aria-label="Obrolan baru">
       <svg class="ic" viewBox="0 0 24 24"><path d="M12 20.5c-1.6 0-3.1-.4-4.4-1.2L3.5 20.5l1.3-3.6A8.3 8.3 0 0 1 3.5 12 8.5 8.5 0 1 1 12 20.5z"/></svg>
@@ -222,22 +264,34 @@ body:not(.view-tools) #toolsView{display:none}
 
   <main id="scroll">
     <div id="empty">
+      <span class="orb"></span><span class="rings"></span>
+      <svg class="spk a" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
+      <svg class="spk b" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
+      <svg class="spk c" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
       <h1>CLARITY <b>AI</b></h1>
       <p>Tanya apa saja, jawabannya jernih.</p>
     </div>
     <div id="thread" aria-live="polite"></div>
   </main>
 
-  <section id="toolsView" aria-label="Alat gambar dan video">
-    <h1>Alat gambar &amp; video</h1>
-    <p class="sub" id="toolSub"></p>
-    <div class="chips" id="chips" role="radiogroup" aria-label="Pilih alat"></div>
-    <form class="field" id="upForm" autocomplete="off">
-      <input id="upUrl" type="url" inputmode="url" aria-label="Link gambar atau video" required>
-      <button type="submit" id="upBtn">Proses</button>
-    </form>
-    <div class="status" id="upStatus" hidden></div>
-    <div id="upOut" hidden></div>
+  <section id="toolView" aria-label="Alat">
+    <div class="hero" id="toolHero"></div>
+    <label class="drop" id="drop" for="fileIn">
+      <span class="up"><svg class="ic" viewBox="0 0 24 24" style="width:26px;height:26px;stroke-width:2.2"><path d="M12 16V5M7 9.5L12 5l5 4.5M5 19h14"/></svg></span>
+      <b id="dropTitle">Pilih gambar</b>
+      <small id="dropHint">Ketuk untuk memilih dari galeri, atau seret file ke sini</small>
+      <input class="sr" id="fileIn" type="file">
+    </label>
+    <div class="picked" id="picked" hidden>
+      <span id="pickedTh"></span>
+      <div class="meta"><b id="pickedName"></b><small id="pickedSize"></small></div>
+      <button class="swap" type="button" id="swapBtn">Ganti</button>
+      <button class="go" type="button" id="goBtn">Proses</button>
+    </div>
+    <div class="status" id="toolStatus" hidden></div>
+    <div id="toolOut"></div>
+    <div class="steps" id="toolSteps"></div>
+    <p class="fine" id="toolFine"></p>
   </section>
 
   <footer>
@@ -254,9 +308,7 @@ body:not(.view-tools) #toolsView{display:none}
     </div>
     <form class="composer" id="form" autocomplete="off">
       <textarea id="input" rows="1" placeholder="Tanya CLARITY AI" aria-label="Pesan"></textarea>
-      <button class="send" id="sendBtn" type="submit" aria-label="Kirim" disabled>
-        <svg class="ic" viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>
-      </button>
+      <button class="send" id="sendBtn" type="submit" aria-label="Kirim" disabled></button>
     </form>
     <p class="note">CLARITY AI bisa keliru. Periksa info penting.</p>
   </footer>
@@ -264,39 +316,64 @@ body:not(.view-tools) #toolsView{display:none}
 
 <div id="scrim"></div>
 
-<aside id="drawer" aria-label="Riwayat obrolan">
+<aside id="drawer" aria-label="Menu">
   <h2>CLARITY AI</h2>
-  <a class="nav" id="navUp" href="#tools">
-    <svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 16l3-3.5 2.5 2.5L16 12l2 2.5M9 9.5v.01"/></svg>Alat gambar &amp; video
-  </a>
-  <div class="label">Obrolan</div>
-  <div id="list"></div>
+  <div class="dscroll">
+    <button class="nav" id="navTools" type="button" aria-expanded="false" aria-controls="toolList">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 16l3-3.5 2.5 2.5L16 12l2 2.5M9 9.5v.01"/></svg>
+      <span class="grow">Alat gambar &amp; video</span>
+      <svg class="ic chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="subwrap"><div id="toolList"></div></div>
+    <div class="label">Obrolan</div>
+    <div id="list"></div>
+  </div>
   <button class="newchat" id="newDrawer">
     <svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5l4 4L8 20l-5 1 1-5z" transform="translate(-1 -1)"/></svg>Obrolan baru
   </button>
 </aside>
 
-<div id="sheet" role="dialog" aria-label="Pilih AI">
-  <div class="grab"></div>
-  <h3>Pilih AI</h3>
-  <div id="opts" role="radiogroup"></div>
-</div>
-
 <script>
 (() => {
   'use strict';
 
-  /* ---------- Konfigurasi API ---------- */
+  /* ---------- Konfigurasi ---------- */
   const BASE = 'https://api.ikyyxd.my.id';
   const enc = encodeURIComponent;
-  const APIS = [
-    { id:'gemini', name:'Gemini',    desc:'Ingat isi obrolan, tiap obrolan punya sesi sendiri',
-      url:(q, sid) => `${BASE}/ai/gemini?text=${enc(q)}&sessionsId=${enc(sid)}` },
-    { id:'dola',   name:'Dola',      desc:'Jawaban cepat, tanpa memori obrolan',
-      url:(q) => `${BASE}/ai/cici?prompt=${enc(q)}` },
-    { id:'public', name:'Public AI', desc:'Ringkas dan sopan, tanpa memori obrolan',
-      url:(q) => `${BASE}/ai/publicai?apikey=kyzz&q=${enc(q)}` }
+  const PERSONA = 'Kamu adalah CLARITY AI, asisten AI buatan Xyric. Kalau ada yang bertanya siapa kamu atau siapa yang membuatmu, jawab bahwa kamu CLARITY AI buatan Xyric. Jawab dengan bahasa yang dipakai pengguna, jelas dan ringkas.';
+  const chatUrl = q => `${BASE}/ai/publicai?apikey=kyzz&q=${enc(PERSONA + '\n\nPesan pengguna: ' + q)}`;
+
+  const TOOLS = [
+    { id:'upscale',     name:'Upscale',          color:'#0b9c84', path:'/tools/upscale',    param:'url',      kind:'image', sample:'sharp',
+      desc:'Perbesar dan pertajam gambar.',
+      icon:'<path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/>' },
+    { id:'upscale2',    name:'Upscale v2',       color:'#2f6fe0', path:'/tools/upscale2',   param:'url',      kind:'image', sample:'sharp',
+      desc:'Mesin upscale cadangan kalau hasil pertama kurang pas.',
+      icon:'<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/>' },
+    { id:'remini',      name:'Remini',           color:'#8b45e6', path:'/tools/remini',     param:'url',      kind:'image', sample:'sharp',
+      desc:'Perjelas foto buram dan wajah.',
+      icon:'<path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9zM19 3v4M17 5h4"/>' },
+    { id:'removebg',    name:'Hapus latar',      color:'#e0600f', path:'/tools/removebg',   param:'url',      kind:'image', sample:'cutout',
+      desc:'Buang latar belakang, objek utama tetap.',
+      icon:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>' },
+    { id:'unwatermark', name:'Hapus watermark',  color:'#d6347f', path:'/edit/unwatermark', param:'image',    kind:'image', sample:'wm',
+      desc:'Hapus watermark dari gambar.',
+      icon:'<path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.7 12 3.5 12 3.5zM4 4l16 16"/>' },
+    { id:'blur',        name:'Blur',             color:'#0b8aa6', path:'/image/blur',       param:'url',      kind:'image', sample:'blur',
+      desc:'Buat gambar jadi buram.',
+      icon:'<circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="9.5" stroke-dasharray="1 4"/>' },
+    { id:'img2prompt',  name:'Gambar ke prompt', color:'#b4730a', path:'/tools/img2prompt', param:'url',      kind:'text',  sample:'sharp',
+      desc:'Ubah gambar jadi deskripsi prompt.',
+      icon:'<path d="M4 6h16M4 12h10M4 18h14"/>' },
+    { id:'hdvid',       name:'Upscale video',    color:'#d83a3a', path:'/tools/hdvidd',     param:'videourl', kind:'video', sample:'sharp',
+      desc:'Naikkan kualitas video. Video besar butuh waktu lebih lama.',
+      icon:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/>' }
   ];
+  const STEPS = {
+    image:['Pilih gambar dari galeri.','Tekan Proses dan tunggu sebentar.','Geser garis untuk membandingkan Before dan After.'],
+    text:['Pilih gambar dari galeri.','Tekan Buat prompt.','Salin prompt hasilnya.'],
+    video:['Pilih video dari galeri.','Tekan Proses. Video besar bisa beberapa menit.','Putar video Before dan After.']
+  };
 
   /* ---------- Util ---------- */
   const $ = s => document.querySelector(s);
@@ -306,14 +383,18 @@ body:not(.view-tools) #toolsView{display:none}
   };
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const svg = (inner, extra) => `<svg class="ic" viewBox="0 0 24 24"${extra || ''}>${inner}</svg>`;
   const ICON = {
-    copy:'<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
-    check:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-    retry:'<svg class="ic" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
-    trash:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
-    stop:'<svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/></svg>',
-    up:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>'
+    copy: svg('<rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>'),
+    check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+    retry: svg('<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>'),
+    trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>'),
+    stop: svg('<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>', ' style="fill:currentColor;stroke:none"'),
+    up: svg('<path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/>'),
+    lr: svg('<path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>'),
+    open: svg('<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>')
   };
+  const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
   /* ---------- Markdown ringan ---------- */
   function inline(t){
@@ -351,40 +432,47 @@ body:not(.view-tools) #toolsView{display:none}
     });
   }
 
-  /* ---------- State ---------- */
+  async function copyText(t, btn, done){
+    try { await navigator.clipboard.writeText(t); }
+    catch(e){
+      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(_){} ta.remove();
+    }
+    const old = btn.innerHTML; btn.innerHTML = done; setTimeout(() => { btn.innerHTML = old; }, 1400);
+  }
+
+  /* ---------- State chat ---------- */
   let chats = store.get('clarity.chats', {});
-  let apiId = store.get('clarity.api', 'gemini');
-  if (!APIS.some(a => a.id === apiId)) apiId = 'gemini';
   let chat = null;
-
-  // pesan yang tertinggal "berpikir" saat halaman ditutup dianggap terputus
   Object.values(chats).forEach(c => c.msgs.forEach(m => { if (m.pending){ m.pending = false; m.err = 'Koneksi terputus sebelum jawaban datang.'; } }));
-
   const save = () => store.set('clarity.chats', chats);
   const newId = () => 'c-' + Math.random().toString(36).slice(2, 9);
-  const apiOf = id => APIS.find(a => a.id === id) || APIS[0];
 
-  /* ---------- Routing: setiap obrolan = halaman sendiri (#c-xxxx) ---------- */
+  /* ---------- Routing: obrolan = #c-xxxx, alat = #t-nama ---------- */
+  let curTool = null;
   function route(){
-    const id = location.hash.slice(1);
-    const isUp = id === 'tools' || id === 'upscale';
-    document.body.classList.toggle('view-tools', isUp);
-    $('#navUp').classList.toggle('cur', isUp);
-    if (isUp){ closeAll(); return; }
+    let id = location.hash.slice(1);
+    if (id === 'tools' || id === 'upscale'){ history.replaceState(null, '', '#t-upscale'); id = 't-upscale'; }
+    const tm = /^t-([a-z0-9]+)$/.exec(id);
+    const tool = tm && TOOLS.find(t => t.id === tm[1]);
+    document.body.classList.toggle('view-tool', !!tool);
+    closeAll();
+    markNav(tool ? tool.id : null);
+    if (tool){ openTool(tool); return; }
+    curTool = null;
     if (!/^c-[a-z0-9]+$/.test(id)){
       history.replaceState(null, '', '#' + newId());
       return route();
     }
     chat = chats[id] || { id, title:'', msgs:[], ts:Date.now() };
-    closeAll();
     render(true);
     $('#input').value = '';
     autosize();
   }
-  function newChat(){ location.hash = newId(); setTimeout(() => $('#input').focus(), 50); }
+  function newChat(){ location.hash = newId(); setTimeout(() => { if (!curTool) $('#input').focus(); }, 60); }
   window.addEventListener('hashchange', route);
 
-  /* ---------- Render ---------- */
+  /* ---------- Render chat ---------- */
   const thread = $('#thread'), scroller = $('#scroll');
   const nearEnd = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 140;
   const toEnd = () => { scroller.scrollTop = scroller.scrollHeight; };
@@ -394,10 +482,9 @@ body:not(.view-tools) #toolsView{display:none}
     const last = chat.msgs.length - 1;
     thread.innerHTML = chat.msgs.map((m, i) => {
       if (m.role === 'user') return `<div class="msg user"><div class="bubble">${esc(m.text)}</div></div>`;
-      const who = esc(apiOf(m.api).name);
       if (m.pending) return `<div class="msg ai"><div class="think"><span class="dot"></span><span class="shimmer">Berpikir…</span></div></div>`;
       if (m.err) return `<div class="msg ai"><div class="err">${esc(m.err)}</div><div class="acts"><button type="button" data-act="retry">${ICON.retry}Coba lagi</button></div></div>`;
-      return `<div class="msg ai" data-i="${i}"><div class="ai-body">${m.reveal ? '' : md(m.text)}</div><div class="acts"><button type="button" data-act="copy" aria-label="Salin jawaban">${ICON.copy}</button>${i === last ? `<button type="button" data-act="retry" aria-label="Buat ulang jawaban">${ICON.retry}</button>` : ''}<span class="via">${who}</span></div></div>`;
+      return `<div class="msg ai" data-i="${i}"><div class="ai-body">${m.reveal ? '' : md(m.text)}</div><div class="acts"><button type="button" data-act="copy" aria-label="Salin jawaban">${ICON.copy}</button>${i === last ? `<button type="button" data-act="retry" aria-label="Buat ulang jawaban">${ICON.retry}</button>` : ''}</div></div>`;
     }).join('');
     const empty = chat.msgs.length === 0;
     $('#empty').hidden = !empty;
@@ -418,7 +505,7 @@ body:not(.view-tools) #toolsView{display:none}
     if (reduced || text.length < 30){ el.innerHTML = md(text); return; }
     let n = 0; const step = Math.max(3, Math.ceil(text.length / 80));
     const tick = () => {
-      if (!el.isConnected || chat.id !== id) return;
+      if (!el.isConnected || !chat || chat.id !== id) return;
       n = Math.min(text.length, n + step);
       const stick = nearEnd();
       el.innerHTML = md(text.slice(0, n));
@@ -428,12 +515,12 @@ body:not(.view-tools) #toolsView{display:none}
     tick();
   }
 
-  /* ---------- Kirim ke API ---------- */
-  function pick(d){
+  /* ---------- Kirim ke Public AI ---------- */
+  function pickText(d){
     if (typeof d === 'string') return d;
     for (const v of [d.result, d.response, d.answer, d.message, d.text, d.output, d.reply, d.content, d.data]){
       if (typeof v === 'string' && v.trim()) return v;
-      if (v && typeof v === 'object'){ const r = pick(v); if (r) return r; }
+      if (v && typeof v === 'object'){ const r = pickText(v); if (r) return r; }
     }
     return '';
   }
@@ -441,53 +528,51 @@ body:not(.view-tools) #toolsView{display:none}
   async function run(c){
     const m = c.msgs[c.msgs.length - 1];
     const q = [...c.msgs].reverse().find(x => x.role === 'user').text;
-    const api = apiOf(m.api);
     const ctrl = new AbortController();
     let why = '';
     c.busy = true; c.stop = () => { why = 'stop'; ctrl.abort(); };
     const timer = setTimeout(() => { why = 'timeout'; ctrl.abort(); }, 75000);
     updateSend();
     try {
-      const res = await fetch(api.url(q, c.id), { signal: ctrl.signal });
+      const res = await fetch(chatUrl(q), { signal: ctrl.signal });
       const raw = await res.text();
       let data = null; try { data = JSON.parse(raw); } catch(e){}
       if (!res.ok) throw new Error(res.status >= 500
-        ? `Server ${api.name} sedang bermasalah (${res.status}). Coba lagi sebentar atau pilih AI lain.`
+        ? `Server sedang bermasalah (${res.status}). Coba lagi sebentar.`
         : `Permintaan ditolak server (${res.status}).`);
       if (!data) throw new Error('Balasan server tidak bisa dibaca.');
-      if (data.status === false) throw new Error(pick({ m:data.message, e:data.error }) || 'Server mengembalikan status gagal.');
-      const t = pick(data).trim();
+      if (data.status === false) throw new Error(pickText({ m:data.message, e:data.error }) || 'Server mengembalikan status gagal.');
+      const t = pickText(data).trim();
       if (!t) throw new Error('Server membalas tanpa isi.');
       m.text = t; m.reveal = true;
     } catch(e){
-      if (e.name === 'AbortError') m.err = why === 'stop' ? 'Dihentikan.' : 'Terlalu lama menunggu jawaban. Coba lagi atau pilih AI lain.';
+      if (e.name === 'AbortError') m.err = why === 'stop' ? 'Dihentikan.' : 'Terlalu lama menunggu jawaban. Coba lagi.';
       else if (e instanceof TypeError) m.err = 'Tidak bisa terhubung ke API. Cek koneksi internet. Kalau koneksi aman, API mungkin memblokir akses dari browser (CORS).';
       else m.err = e.message;
     } finally {
       clearTimeout(timer);
       m.pending = false; c.busy = false; c.stop = null;
       c.ts = Date.now(); save();
-      if (chat.id === c.id) render(); else renderList();
+      if (chat && chat.id === c.id) render(); else renderList();
     }
   }
 
   function ask(text){
     text = text.trim();
-    if (!text || chat.busy) return;
+    if (!text || !chat || chat.busy) return;
     if (!chats[chat.id]) chats[chat.id] = chat;
     if (!chat.title) chat.title = text.slice(0, 48);
     chat.msgs.push({ role:'user', text });
-    chat.msgs.push({ role:'ai', pending:true, text:'', api:apiId });
+    chat.msgs.push({ role:'ai', pending:true, text:'' });
     chat.ts = Date.now(); save();
     render(true);
     run(chat);
   }
-
   function retry(){
-    if (chat.busy) return;
+    if (!chat || chat.busy) return;
     const last = chat.msgs[chat.msgs.length - 1];
     if (!last || last.role !== 'ai') return;
-    chat.msgs[chat.msgs.length - 1] = { role:'ai', pending:true, text:'', api:apiId };
+    chat.msgs[chat.msgs.length - 1] = { role:'ai', pending:true, text:'' };
     render(true);
     run(chat);
   }
@@ -505,25 +590,13 @@ body:not(.view-tools) #toolsView{display:none}
   });
   $('#form').addEventListener('submit', e => {
     e.preventDefault();
-    if (sendBtn.dataset.mode === 'stop'){ chat.stop && chat.stop(); return; }
+    if (sendBtn.dataset.mode === 'stop'){ chat && chat.stop && chat.stop(); return; }
     const t = input.value;
     if (!t.trim()) return;
     input.value = ''; autosize();
     ask(t);
   });
-  $('#starters').addEventListener('click', e => {
-    const b = e.target.closest('.starter'); if (b) ask(b.dataset.q);
-  });
-
-  /* ---------- Aksi pada pesan ---------- */
-  async function copyText(t, btn, done){
-    try { await navigator.clipboard.writeText(t); }
-    catch(e){
-      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(_){} ta.remove();
-    }
-    const old = btn.innerHTML; btn.innerHTML = done; setTimeout(() => { btn.innerHTML = old; }, 1400);
-  }
+  $('#starters').addEventListener('click', e => { const b = e.target.closest('.starter'); if (b) ask(b.dataset.q); });
   thread.addEventListener('click', e => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const act = b.dataset.act;
@@ -536,9 +609,20 @@ body:not(.view-tools) #toolsView{display:none}
   function renderList(){
     const rows = Object.values(chats).sort((a, b) => b.ts - a.ts);
     $('#list').innerHTML = rows.length ? rows.map(c =>
-      `<div class="row${c.id === (chat && chat.id) ? ' cur' : ''}"><a href="#${c.id}">${esc(c.title || 'Obrolan baru')}</a><button class="del" type="button" data-del="${c.id}" aria-label="Hapus obrolan">${ICON.trash}</button></div>`
+      `<div class="row${chat && c.id === chat.id ? ' cur' : ''}"><a href="#${c.id}">${esc(c.title || 'Obrolan baru')}</a><button class="del" type="button" data-del="${c.id}" aria-label="Hapus obrolan">${ICON.trash}</button></div>`
     ).join('') : '<div class="none">Belum ada obrolan.</div>';
   }
+  $('#toolList').innerHTML = TOOLS.map(t =>
+    `<a class="sub" href="#t-${t.id}" data-tool="${t.id}"><i style="background:${t.color}">${svg(t.icon)}</i>${esc(t.name)}</a>`
+  ).join('');
+  const navTools = $('#navTools');
+  navTools.addEventListener('click', () => navTools.setAttribute('aria-expanded', navTools.getAttribute('aria-expanded') === 'true' ? 'false' : 'true'));
+  function markNav(id){
+    document.querySelectorAll('#toolList .sub').forEach(a => a.classList.toggle('cur', a.dataset.tool === id));
+    navTools.classList.toggle('cur', !!id);
+    if (id) navTools.setAttribute('aria-expanded', 'true');
+  }
+  $('#toolList').addEventListener('click', e => { if (e.target.closest('a')) closeAll(); });
   $('#list').addEventListener('click', e => {
     const d = e.target.closest('[data-del]');
     if (d){
@@ -550,56 +634,159 @@ body:not(.view-tools) #toolsView{display:none}
     }
     if (e.target.closest('a')) closeAll();
   });
-  function closeAll(){ document.body.classList.remove('drawer-open', 'sheet-open'); }
+  function closeAll(){ document.body.classList.remove('drawer-open'); }
   $('#menuBtn').addEventListener('click', () => { renderList(); document.body.classList.add('drawer-open'); });
   $('#scrim').addEventListener('click', closeAll);
   $('#newTop').addEventListener('click', newChat);
   $('#newDrawer').addEventListener('click', newChat);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
 
-  /* ---------- Pilih AI ---------- */
-  function renderApi(){
-    $('#apiName').textContent = apiOf(apiId).name;
-    $('#opts').innerHTML = APIS.map(a =>
-      `<button class="opt" type="button" role="radio" aria-checked="${a.id === apiId}" data-api="${a.id}"><span class="t"><b>${a.name}</b><small>${a.desc}</small></span><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>`
-    ).join('');
+  /* ---------- Contoh gambar (hiasan) ---------- */
+  function scene({ blur = 0, wm = false, cut = false } = {}){
+    const f = blur ? `<filter id="b" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="${blur}"/></filter>` : '';
+    const g = blur ? ' filter="url(#b)"' : '';
+    const bg = cut
+      ? '<rect width="400" height="300" fill="url(#ck)"/>'
+      : '<rect width="400" height="300" fill="url(#sky)"/><circle cx="318" cy="68" r="32" fill="#ffd36b"/><path d="M0 230L90 130 160 200 240 110 330 210 400 160V300H0Z" fill="#6c7bd9"/><path d="M0 262L110 190 200 250 290 180 400 250V300H0Z" fill="#3f4fb0"/>';
+    const sub = '<g transform="translate(150 118)"><circle cx="50" cy="30" r="27" fill="#f4a261"/><rect x="16" y="62" width="68" height="100" rx="28" fill="#e76f51"/><circle cx="41" cy="26" r="3" fill="#264653"/><circle cx="59" cy="26" r="3" fill="#264653"/></g>';
+    const mark = wm ? '<text x="200" y="160" text-anchor="middle" font-size="36" font-weight="700" fill="#fff" fill-opacity=".6" transform="rotate(-24 200 160)" font-family="sans-serif">WATERMARK</text>' : '';
+    const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb88c"/><stop offset="1" stop-color="#ffe7c7"/></linearGradient><pattern id="ck" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#eeeef2"/><rect width="10" height="10" fill="#d3d3db"/><rect x="10" y="10" width="10" height="10" fill="#d3d3db"/></pattern>${f}</defs><g${g}>${bg}${sub}</g>${mark}</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
   }
-  $('#apiBtn').addEventListener('click', () => document.body.classList.add('sheet-open'));
-  $('#opts').addEventListener('click', e => {
-    const b = e.target.closest('[data-api]'); if (!b) return;
-    apiId = b.dataset.api; store.set('clarity.api', apiId); renderApi(); closeAll();
-  });
+  const SAMPLES = {
+    sharp:  () => [scene({ blur:3.5 }), scene()],
+    cutout: () => [scene(), scene({ cut:true })],
+    blur:   () => [scene(), scene({ blur:6 })],
+    wm:     () => [scene({ wm:true }), scene()]
+  };
 
-  /* ---------- Alat gambar & video ---------- */
-  const IMG_PH = 'https://contoh.com/gambar.jpg';
-  const TOOLS = [
-    { id:'upscale',     name:'Upscale',          desc:'Perbesar dan pertajam gambar.',                path:'/tools/upscale',     param:'url',      kind:'image' },
-    { id:'upscale2',    name:'Upscale v2',       desc:'Upscale cadangan kalau hasil pertama kurang bagus.', path:'/tools/upscale2', param:'url', kind:'image' },
-    { id:'remini',      name:'Remini',           desc:'Perjelas foto buram dan wajah.',                path:'/tools/remini',      param:'url',      kind:'image' },
-    { id:'removebg',    name:'Hapus latar',      desc:'Buang latar belakang, objek utama tetap.',      path:'/tools/removebg',    param:'url',      kind:'image' },
-    { id:'unwatermark', name:'Hapus watermark',  desc:'Hapus watermark dari gambar.',                  path:'/edit/unwatermark',  param:'image',    kind:'image' },
-    { id:'blur',        name:'Blur',             desc:'Buat gambar jadi buram.',                       path:'/image/blur',        param:'url',      kind:'image' },
-    { id:'img2prompt',  name:'Gambar ke prompt', desc:'Ubah gambar jadi deskripsi prompt.',            path:'/tools/img2prompt',  param:'url',      kind:'text' },
-    { id:'hdvid',       name:'Upscale video',    desc:'Naikkan kualitas video. Prosesnya bisa lama.',  path:'/tools/hdvidd',      param:'videourl', kind:'video', ph:'https://contoh.com/video.mp4' }
-  ];
-  const toolOf = id => TOOLS.find(t => t.id === id) || TOOLS[0];
-  let toolId = store.get('clarity.tool', 'upscale');
-  if (!TOOLS.some(t => t.id === toolId)) toolId = 'upscale';
-
-  const upStatus = $('#upStatus'), upOut = $('#upOut'), upBtn = $('#upBtn'), upUrl = $('#upUrl');
-  function upMsg(text, isErr){ upStatus.hidden = !text; upStatus.textContent = text || ''; upStatus.classList.toggle('err', !!isErr); }
-  function renderTools(clear){
-    const t = toolOf(toolId);
-    $('#chips').innerHTML = TOOLS.map(x => `<button class="chip" type="button" role="radio" aria-checked="${x.id === toolId}" data-tool="${x.id}">${x.name}</button>`).join('');
-    $('#toolSub').textContent = t.desc;
-    upUrl.placeholder = t.ph || IMG_PH;
-    upBtn.textContent = t.kind === 'text' ? 'Buat prompt' : 'Proses';
-    if (clear){ upOut.hidden = true; upOut.innerHTML = ''; upMsg(''); }
+  /* ---------- Slider Before / After ---------- */
+  function makeSlider(beforeSrc, afterSrc, o = {}){
+    const el = document.createElement('div'); el.className = 'cmp';
+    el.innerHTML = `<div class="cmp-stage${o.cut ? ' cut' : ''}"><img class="cmp-after" alt="After"><img class="cmp-before" alt="Before"><span class="tag l">Before</span><span class="tag r">After</span><div class="cmp-handle" role="slider" tabindex="0" aria-label="Geser untuk membandingkan Before dan After" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="grip">${ICON.lr}</span></div></div>`;
+    const st = el.firstChild, h = st.querySelector('.cmp-handle'), b = st.querySelector('.cmp-before'), a = st.querySelector('.cmp-after');
+    let cur = 50, drag = false;
+    b.addEventListener('load', () => { if (b.naturalWidth) st.style.aspectRatio = b.naturalWidth + '/' + b.naturalHeight; });
+    b.src = beforeSrc; a.src = afterSrc;
+    const set = p => { p = Math.max(0, Math.min(100, p)); cur = p; st.style.setProperty('--pos', p + '%'); h.setAttribute('aria-valuenow', String(Math.round(p))); };
+    const fromEvent = e => { const r = st.getBoundingClientRect(); if (r.width) set((e.clientX - r.left) / r.width * 100); };
+    st.addEventListener('pointerdown', e => { drag = true; try { st.setPointerCapture(e.pointerId); } catch(_){} fromEvent(e); });
+    st.addEventListener('pointermove', e => { if (drag) fromEvent(e); });
+    const end = () => { drag = false; };
+    st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+    h.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft'){ set(cur - 5); e.preventDefault(); }
+      else if (e.key === 'ArrowRight'){ set(cur + 5); e.preventDefault(); }
+      else if (e.key === 'Home'){ set(0); e.preventDefault(); }
+      else if (e.key === 'End'){ set(100); e.preventDefault(); }
+    });
+    if (reduced) set(50);
+    else {
+      set(97); let t0 = null;
+      const step = ts => {
+        if (drag || !el.isConnected && t0 !== null) return;
+        if (t0 === null) t0 = ts;
+        const k = Math.min(1, (ts - t0) / 1000);
+        set(97 - 47 * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+    return el;
   }
-  $('#chips').addEventListener('click', e => {
-    const b = e.target.closest('[data-tool]'); if (!b || upBtn.disabled) return;
-    toolId = b.dataset.tool; store.set('clarity.tool', toolId); renderTools(true);
+
+  /* ---------- Halaman alat ---------- */
+  const toolView = $('#toolView'), toolOut = $('#toolOut'), toolStatus = $('#toolStatus');
+  const fileIn = $('#fileIn'), drop = $('#drop'), picked = $('#picked'), goBtn = $('#goBtn'), swapBtn = $('#swapBtn');
+  let file = null, fileUrl = '', busy = false, job = null;
+
+  const heroHtml = t =>
+    `<div class="hero-dots"></div><span class="fl f1"></span><span class="fl f2"></span><span class="fl f3"></span>` +
+    `<svg class="hero-ghost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">${t.icon}</svg>` +
+    `<div class="hero-badge">${svg(t.icon)}</div><h1>${esc(t.name)}</h1><p>${esc(t.desc)}</p>`;
+
+  function statusMsg(text){ toolStatus.hidden = !text; toolStatus.textContent = text || ''; }
+  function showSample(t){
+    toolOut.innerHTML = '';
+    const pair = (SAMPLES[t.sample] || SAMPLES.sharp)();
+    const wrap = document.createElement('div');
+    wrap.appendChild(makeSlider(pair[0], pair[1], { cut: t.sample === 'cutout' }));
+    const cap = document.createElement('div'); cap.className = 'cmp-cap';
+    cap.innerHTML = '<span><span class="badge">Contoh</span>&nbsp; Geser garis untuk lihat bedanya.</span>';
+    wrap.appendChild(cap);
+    toolOut.appendChild(wrap);
+  }
+  function resetPicked(){
+    if (job){ job.abort(); job = null; }
+    if (fileUrl){ URL.revokeObjectURL(fileUrl); }
+    file = null; fileUrl = ''; busy = false; fileIn.value = '';
+    picked.hidden = true; drop.hidden = false; statusMsg('');
+  }
+  function openTool(t){
+    curTool = t; resetPicked();
+    toolView.style.setProperty('--tool', t.color);
+    toolView.scrollTop = 0;
+    $('#toolHero').innerHTML = heroHtml(t);
+    const vid = t.kind === 'video';
+    $('#dropTitle').textContent = vid ? 'Pilih video' : 'Pilih gambar';
+    $('#dropHint').textContent = 'Ketuk untuk memilih dari galeri, atau seret file ke sini';
+    fileIn.accept = vid ? 'video/*' : 'image/*';
+    goBtn.textContent = t.kind === 'text' ? 'Buat prompt' : 'Proses';
+    $('#toolSteps').innerHTML = STEPS[t.kind].map((s, i) => `<div class="step"><i>${i + 1}</i><span>${s}</span></div>`).join('');
+    $('#toolFine').textContent = 'File diunggah sementara ke uguu.se supaya bisa diproses, lalu terhapus otomatis.';
+    showSample(t);
+  }
+
+  function pickFile(f){
+    if (!f || busy || !curTool) return;
+    const vid = curTool.kind === 'video';
+    if (!f.type.startsWith(vid ? 'video/' : 'image/')){ statusMsg(vid ? 'File harus berupa video.' : 'File harus berupa gambar.'); return; }
+    if (f.size > (vid ? 100 : 20) * 1048576){ statusMsg(`Ukuran file maksimal ${vid ? 100 : 20} MB.`); return; }
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    file = f; fileUrl = URL.createObjectURL(f);
+    $('#pickedTh').innerHTML = vid ? `<video class="th" muted playsinline preload="metadata" src="${fileUrl}#t=0.1"></video>` : `<img class="th" alt="" src="${fileUrl}">`;
+    $('#pickedName').textContent = f.name || (vid ? 'video' : 'gambar');
+    $('#pickedSize').textContent = fmtSize(f.size);
+    picked.hidden = false; drop.hidden = true; statusMsg('');
+    toolOut.innerHTML = '';
+  }
+  fileIn.addEventListener('change', () => pickFile(fileIn.files[0]));
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => pickFile(e.dataTransfer && e.dataTransfer.files[0]));
+  document.addEventListener('paste', e => {
+    if (!curTool || curTool.kind === 'video') return;
+    const f = [...(e.clipboardData ? e.clipboardData.files : [])][0];
+    if (f) pickFile(f);
   });
+  swapBtn.addEventListener('click', () => { if (busy) return; resetPicked(); showSample(curTool); fileIn.click(); });
+  goBtn.addEventListener('click', processFile);
+
+  function setBusy(v){ busy = v; goBtn.disabled = v; swapBtn.disabled = v; }
+  function progress(text, step){
+    toolOut.innerHTML = `<div class="prog" role="status"><div class="row1"><span class="shimmer">${esc(text)}</span><small>${esc(step)}</small></div><div class="bar"><i></i></div></div>`;
+  }
+
+  async function uploadFile(f, signal){
+    // 1) langsung dari browser ke uguu.se
+    try {
+      const fd = new FormData(); fd.append('files[]', f, f.name || 'file');
+      const r = await fetch('https://uguu.se/upload', { method:'POST', body:fd, signal });
+      const raw = await r.text(); let u = '';
+      try { const j = JSON.parse(raw); u = (j.files && j.files[0] && j.files[0].url) || j.url || ''; }
+      catch(_){ if (/^https?:\/\//.test(raw.trim())) u = raw.trim().split('\n')[0]; }
+      if (r.ok && u) return u;
+    } catch(e){ if (e.name === 'AbortError') throw e; }
+    // 2) cadangan: fungsi /api/upload di hosting sendiri (maks 4 MB)
+    if (f.size <= 4 * 1048576){
+      try {
+        const r = await fetch('/api/upload?name=' + enc(f.name || 'file') + '&type=' + enc(f.type || ''), { method:'POST', headers:{ 'Content-Type':'application/octet-stream' }, body:f, signal });
+        const j = await r.json();
+        if (r.ok && j.url) return j.url;
+      } catch(e){ if (e.name === 'AbortError') throw e; }
+    }
+    throw new Error('Upload gagal. Coba lagi, atau pakai file yang lebih kecil.');
+  }
 
   function findUrl(d){
     if (typeof d === 'string') return /^https?:\/\/\S+$/.test(d.trim()) ? d.trim() : '';
@@ -621,39 +808,41 @@ body:not(.view-tools) #toolsView{display:none}
     return '';
   }
 
-  function showResult(t, src, out){
-    const k = t.kind;
-    const media = id => k === 'video' ? `<video id="${id}" controls playsinline preload="metadata"></video>` : `<img id="${id}" alt="">`;
-    let html;
-    if (k === 'text'){
-      html = `<div class="shot"><h2>Gambar</h2><img id="rBefore" alt="Gambar yang dianalisis"></div><div class="shot"><h2>Prompt</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin prompt</button></div></div>`;
-    } else {
-      html = `<div class="shot"><h2>Asli</h2>${media('rBefore')}</div><div class="shot"><h2>Hasil</h2>${media('rAfter')}<div class="acts"><a id="rOpen" target="_blank" rel="noopener noreferrer">Buka hasil</a><button type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></div></div>`;
-    }
-    upOut.innerHTML = `<div class="shots">${html}</div>`;
-    $('#rBefore').src = src;
-    if (k === 'text'){
-      $('#rText').textContent = out;
-      $('#rCopyText').onclick = e => copyText(out, e.currentTarget, ICON.check + 'Tersalin');
-    } else {
-      $('#rAfter').src = out;
+  function showResult(t, before, out){
+    toolOut.innerHTML = '';
+    if (t.kind === 'image'){
+      const wrap = document.createElement('div');
+      wrap.appendChild(makeSlider(before, out, { cut: t.sample === 'cutout' }));
+      const cap = document.createElement('div'); cap.className = 'cmp-cap';
+      cap.innerHTML = `<span>Geser garis untuk membandingkan</span><span class="btns"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></span>`;
+      wrap.appendChild(cap); toolOut.appendChild(wrap);
       const a = $('#rOpen'); a.href = out;
       if (out.startsWith('blob:')){ a.download = 'hasil'; $('#rCopy').remove(); }
       else $('#rCopy').onclick = e => copyText(out, e.currentTarget, ICON.check);
+    } else if (t.kind === 'video'){
+      toolOut.innerHTML = `<div class="shots"><div class="shot"><h2>Before</h2><video id="rBefore" controls playsinline preload="metadata"></video></div><div class="shot"><h2>After</h2><video id="rAfter" controls playsinline preload="metadata"></video><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a></div></div></div>`;
+      $('#rBefore').src = before; $('#rAfter').src = out; $('#rOpen').href = out;
+    } else {
+      toolOut.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt="Gambar yang dianalisis"></div><div class="shot"><h2>Prompt</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin prompt</button></div></div></div>`;
+      $('#rBefore').src = before; $('#rText').textContent = out;
+      $('#rCopyText').onclick = e => copyText(out, e.currentTarget, ICON.check + 'Tersalin');
     }
-    upOut.hidden = false;
   }
 
-  $('#upForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const t = toolOf(toolId), url = upUrl.value.trim();
-    if (!/^https?:\/\//i.test(url)){ upMsg('Link harus diawali http:// atau https://', true); return; }
-    upBtn.disabled = true; upOut.hidden = true; upOut.innerHTML = '';
-    upMsg(t.kind === 'video' ? 'Memproses video, ini bisa beberapa menit…' : 'Memproses, tunggu sebentar…');
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), t.kind === 'video' ? 300000 : 120000);
+  async function processFile(){
+    if (!file || busy || !curTool) return;
+    const t = curTool, f = file, before = fileUrl;
+    const ctrl = new AbortController(); job = ctrl;
+    let why = '';
+    setBusy(true); statusMsg('');
+    const timers = [];
     try {
-      const res = await fetch(`${BASE}${t.path}?${t.param}=${enc(url)}`, { signal: ctrl.signal });
+      progress('Mengunggah file…', '1 dari 2');
+      const link = await uploadFile(f, ctrl.signal);
+      if (curTool !== t) return;
+      progress(t.kind === 'video' ? 'Memproses video, ini bisa beberapa menit…' : 'Memproses…', '2 dari 2');
+      timers.push(setTimeout(() => { why = 'timeout'; ctrl.abort(); }, t.kind === 'video' ? 300000 : 120000));
+      const res = await fetch(`${BASE}${t.path}?${t.param}=${enc(link)}`, { signal: ctrl.signal });
       if (!res.ok) throw new Error(res.status >= 500 ? `Server ${t.name} sedang bermasalah (${res.status}). Coba lagi sebentar.` : `Permintaan ditolak server (${res.status}).`);
       const ct = res.headers.get('content-type') || '';
       let out = '';
@@ -667,17 +856,22 @@ body:not(.view-tools) #toolsView{display:none}
         else out = data ? findUrl(data) : findUrl(raw);
       }
       if (!out) throw new Error(t.kind === 'text' ? 'Server tidak mengirim teks hasil.' : 'Server tidak mengirim link hasil.');
-      showResult(t, url, out); upMsg('');
+      if (curTool !== t) return;
+      showResult(t, before, out);
     } catch(err){
-      if (err.name === 'AbortError') upMsg('Terlalu lama menunggu. Coba file yang lebih kecil.', true);
-      else if (err instanceof TypeError) upMsg('Tidak bisa terhubung ke API. Cek koneksi, atau API memblokir akses dari browser (CORS).', true);
-      else upMsg(err.message, true);
-    } finally { clearTimeout(timer); upBtn.disabled = false; }
-  });
+      if (curTool !== t) return;
+      toolOut.innerHTML = '';
+      if (err.name === 'AbortError') statusMsg(why === 'timeout' ? 'Terlalu lama menunggu. Coba file yang lebih kecil.' : 'Dibatalkan.');
+      else if (err instanceof TypeError) statusMsg('Tidak bisa terhubung ke API. Cek koneksi, atau API memblokir akses dari browser (CORS).');
+      else statusMsg(err.message);
+    } finally {
+      timers.forEach(clearTimeout);
+      if (job === ctrl) job = null;
+      if (curTool === t) setBusy(false);
+    }
+  }
 
   /* ---------- Mulai ---------- */
-  renderApi();
-  renderTools(true);
   route();
 })();
 </script>
