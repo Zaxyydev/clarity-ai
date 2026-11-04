@@ -121,6 +121,8 @@ footer{padding-top:6px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px
 .composer{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:8px 8px 8px 20px;box-shadow:var(--shadow)}
 textarea{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;resize:none;max-height:160px;height:26px;padding:9px 0;line-height:26px}
 textarea::placeholder{color:var(--muted)}
+textarea:focus-visible{outline:none}
+.composer:focus-within{border-color:color-mix(in srgb,var(--indigo) 50%,var(--line))}
 .send{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;flex:none;transition:opacity .15s}
 .send:disabled{opacity:.35;cursor:default}
 .send .ic{width:21px;height:21px;stroke-width:2.2}
@@ -160,8 +162,10 @@ body.drawer-open #drawer{transform:none;visibility:visible;transition-delay:0s}
 .newchat{margin:10px 16px 0;height:52px;border-radius:26px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px}
 
 /* tool page */
-body.view-tool #scroll,body.view-tool footer{display:none}
+body.view-tool #scroll,body.view-tool footer,body.view-about #scroll,body.view-about footer{display:none}
 body:not(.view-tool) #toolView{display:none}
+body:not(.view-about) #aboutView{display:none}
+#aboutView{--tool:#6b5ce7;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
 #toolView{--tool:#0b9c84;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
 .hero{
   position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 24px;
@@ -243,6 +247,43 @@ body:not(.view-tool) #toolView{display:none}
 .step i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal;font-weight:700;font-size:14px;background:color-mix(in srgb,var(--tool) 16%,var(--surface));color:var(--tool)}
 .fine{margin:16px 4px 0;font-size:12.5px;color:var(--muted);text-align:center}
 
+/* animasi & hiasan tambahan */
+.caret{display:inline-block;width:2px;height:1.1em;background:var(--tool);margin-left:2px;vertical-align:-.15em;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#toolOut .shots,#toolOut .cmp,#aboutBody > *{animation:rise .38s ease both}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-top:16px}
+.card.txt h2{margin:0 0 8px;font-size:20px;line-height:1.3}
+.card.txt p{margin:0 0 10px;color:var(--muted)}
+.card.txt p:last-child{margin-bottom:0}
+.sec{margin:24px 4px 10px;font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.profile{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:28px 20px 24px}
+.profile h2{margin:6px 0 0;font-size:28px;line-height:1.1}
+.profile p{margin:4px 0 0;color:var(--muted);max-width:34ch}
+.avatar{position:relative;width:132px;height:132px;border-radius:50%;background:conic-gradient(from 210deg,var(--tool),#19c4a5,var(--tool));box-shadow:0 12px 30px color-mix(in srgb,var(--tool) 35%,transparent)}
+.avatar .ini,.avatar img{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);border-radius:50%}
+.avatar .ini{display:grid;place-items:center;font-size:54px;font-weight:700;color:#fff;background:linear-gradient(140deg,var(--tool),color-mix(in srgb,var(--tool) 55%,#000))}
+.avatar img{object-fit:cover;background:var(--surface)}
+.chips2{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+.chips2 span{padding:6px 12px;border-radius:14px;background:color-mix(in srgb,var(--tool) 12%,var(--surface));color:color-mix(in srgb,var(--tool) 70%,var(--fg));font-size:14px;font-weight:600}
+.links{display:grid;gap:10px}
+.link{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--fg);text-decoration:none;min-width:0}
+.link:hover{background:var(--bubble)}
+.link i{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;color:#fff;flex:none}
+.link i .ic{width:22px;height:22px}
+.link span{flex:1;min-width:0}
+.link b{display:block}
+.link small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link > .ic{color:var(--muted);width:20px;height:20px}
+.link-row{display:flex;gap:8px;align-items:center}
+.link-row .link{flex:1}
+.checks{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:14px}
+.checks li{display:flex;gap:12px;align-items:flex-start}
+.checks li > svg{width:28px;height:28px;padding:5px;border-radius:50%;background:color-mix(in srgb,var(--tool) 16%,var(--surface));color:color-mix(in srgb,var(--tool) 70%,var(--fg));stroke-width:2.4;margin-top:1px}
+.checks b{display:block}
+.checks small{display:block;color:var(--muted);font-size:14.5px;line-height:1.45}
+.tpl{margin:0;white-space:pre-wrap;font-family:var(--mono);font-size:13.5px;line-height:1.65;overflow-wrap:anywhere}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -294,6 +335,11 @@ body:not(.view-tool) #toolView{display:none}
     <p class="fine" id="toolFine"></p>
   </section>
 
+  <section id="aboutView" aria-label="Tentang website">
+    <div class="hero" id="aboutHero"></div>
+    <div id="aboutBody"></div>
+  </section>
+
   <footer>
     <div id="starters">
       <button class="starter" data-q="Bantu aku menulis pesan yang sopan untuk menolak ajakan kerja sama.">
@@ -325,6 +371,12 @@ body:not(.view-tool) #toolView{display:none}
       <svg class="ic chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
     </button>
     <div class="subwrap"><div id="toolList"></div></div>
+    <button class="nav" id="navAbout" type="button" aria-expanded="false" aria-controls="aboutList">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></svg>
+      <span class="grow">About website</span>
+      <svg class="ic chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="subwrap"><div id="aboutList"></div></div>
     <div class="label">Obrolan</div>
     <div id="list"></div>
   </div>
@@ -375,6 +427,41 @@ body:not(.view-tool) #toolView{display:none}
     video:['Pilih video dari galeri.','Tekan Proses. Video besar bisa beberapa menit.','Putar video Before dan After.']
   };
 
+  const ABOUT = [
+    { id:'owner',  name:'Owner',          color:'#6b5ce7', desc:'Orang di balik CLARITY AI.',
+      icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>' },
+    { id:'tujuan', name:'Tujuan Website', color:'#0b9c84', desc:'Kenapa CLARITY AI dibuat, dan di mana cari kabar terbarunya.',
+      icon:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>' },
+    { id:'bug',    name:'Bug Report',     color:'#d6561f', desc:'Nemu error? Lapor dengan cara yang bikin cepat dibereskan.',
+      icon:'<rect x="8" y="8" width="8" height="11" rx="4"/><path d="M9 8a3 3 0 0 1 6 0M4 12h4M16 12h4M5 19l3-2M19 19l-3-2M5 6l3 2M19 6l-3 2M12 12v7"/>' }
+  ];
+  const LINKS = [
+    { name:'Channel Update Informasi', url:'https://whatsapp.com/channel/0029Vb8QkZK4o7qPqvW1s90q', color:'#1fa855', ic:'chat' },
+    { name:'Update 2',                 url:'https://whatsapp.com/channel/0029Vb8G6wL6BIEcviaCxf3N', color:'#1fa855', ic:'chat' },
+    { name:'Update 3',                 url:'https://t.me/aetherupdate',                             color:'#229ed9', ic:'plane' }
+  ];
+  const EMAIL = 'xyricnich@gmail.com';
+  const BUG_TEMPLATE = [
+    'Halaman / alat yang dipakai:',
+    '',
+    'Yang gue lakukan sebelum bug muncul (urut dari awal):',
+    '1.',
+    '2.',
+    '3.',
+    '',
+    'Yang terjadi:',
+    '',
+    'Yang seharusnya terjadi:',
+    '',
+    'Penyebab menurut gue:',
+    '',
+    'HP / browser:',
+    'Jam kejadian:',
+    '',
+    '(Lampirkan screenshot)'
+  ].join('\n');
+  const SAMPLE_PROMPT = 'Flat vector illustration of a person in an orange jacket standing before layered blue mountains at sunrise, soft peach sky, large yellow sun at the top right, wide composition, calm color palette, clean minimal style, high detail.';
+
   /* ---------- Util ---------- */
   const $ = s => document.querySelector(s);
   const store = {
@@ -392,6 +479,10 @@ body:not(.view-tool) #toolView{display:none}
     stop: svg('<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>', ' style="fill:currentColor;stroke:none"'),
     up: svg('<path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/>'),
     lr: svg('<path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>'),
+    chat: svg('<path d="M12 20.5c-1.6 0-3.1-.4-4.4-1.2L3.5 20.5l1.3-3.6A8.3 8.3 0 0 1 3.5 12 8.5 8.5 0 1 1 12 20.5z"/>'),
+    plane: svg('<path d="M21 4L3 11l6 2.5L11.5 20 14 14zM9 13.5L21 4"/>'),
+    mail: svg('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/>'),
+    arrow: svg('<path d="M7 17L17 7M9 7h8v8"/>'),
     open: svg('<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>')
   };
   const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
@@ -455,11 +546,15 @@ body:not(.view-tool) #toolView{display:none}
     if (id === 'tools' || id === 'upscale'){ history.replaceState(null, '', '#t-upscale'); id = 't-upscale'; }
     const tm = /^t-([a-z0-9]+)$/.exec(id);
     const tool = tm && TOOLS.find(t => t.id === tm[1]);
+    const am = /^a-([a-z0-9]+)$/.exec(id);
+    const about = am && ABOUT.find(a => a.id === am[1]);
     document.body.classList.toggle('view-tool', !!tool);
+    document.body.classList.toggle('view-about', !!about);
     closeAll();
-    markNav(tool ? tool.id : null);
+    markNav(tool || about ? id : null);
     if (tool){ openTool(tool); return; }
-    curTool = null;
+    leaveTool();
+    if (about){ openAbout(about); return; }
     if (!/^c-[a-z0-9]+$/.test(id)){
       history.replaceState(null, '', '#' + newId());
       return route();
@@ -612,17 +707,18 @@ body:not(.view-tool) #toolView{display:none}
       `<div class="row${chat && c.id === chat.id ? ' cur' : ''}"><a href="#${c.id}">${esc(c.title || 'Obrolan baru')}</a><button class="del" type="button" data-del="${c.id}" aria-label="Hapus obrolan">${ICON.trash}</button></div>`
     ).join('') : '<div class="none">Belum ada obrolan.</div>';
   }
-  $('#toolList').innerHTML = TOOLS.map(t =>
-    `<a class="sub" href="#t-${t.id}" data-tool="${t.id}"><i style="background:${t.color}">${svg(t.icon)}</i>${esc(t.name)}</a>`
-  ).join('');
-  const navTools = $('#navTools');
-  navTools.addEventListener('click', () => navTools.setAttribute('aria-expanded', navTools.getAttribute('aria-expanded') === 'true' ? 'false' : 'true'));
-  function markNav(id){
-    document.querySelectorAll('#toolList .sub').forEach(a => a.classList.toggle('cur', a.dataset.tool === id));
-    navTools.classList.toggle('cur', !!id);
-    if (id) navTools.setAttribute('aria-expanded', 'true');
+  const subLink = (p, t) => `<a class="sub" href="#${p}-${t.id}" data-key="${p}-${t.id}"><i style="background:${t.color}">${svg(t.icon)}</i>${esc(t.name)}</a>`;
+  $('#toolList').innerHTML = TOOLS.map(t => subLink('t', t)).join('');
+  $('#aboutList').innerHTML = ABOUT.map(a => subLink('a', a)).join('');
+  const navTools = $('#navTools'), navAbout = $('#navAbout');
+  [navTools, navAbout].forEach(b => b.addEventListener('click', () => b.setAttribute('aria-expanded', b.getAttribute('aria-expanded') === 'true' ? 'false' : 'true')));
+  function markNav(key){
+    document.querySelectorAll('#toolList .sub, #aboutList .sub').forEach(a => a.classList.toggle('cur', a.dataset.key === key));
+    navTools.classList.toggle('cur', !!key && key[0] === 't');
+    navAbout.classList.toggle('cur', !!key && key[0] === 'a');
+    if (key) (key[0] === 't' ? navTools : navAbout).setAttribute('aria-expanded', 'true');
   }
-  $('#toolList').addEventListener('click', e => { if (e.target.closest('a')) closeAll(); });
+  ['#toolList', '#aboutList'].forEach(sel => $(sel).addEventListener('click', e => { if (e.target.closest('a')) closeAll(); }));
   $('#list').addEventListener('click', e => {
     const d = e.target.closest('[data-del]');
     if (d){
@@ -706,8 +802,29 @@ body:not(.view-tool) #toolView{display:none}
     `<div class="hero-badge">${svg(t.icon)}</div><h1>${esc(t.name)}</h1><p>${esc(t.desc)}</p>`;
 
   function statusMsg(text){ toolStatus.hidden = !text; toolStatus.textContent = text || ''; }
+  function typer(el, text, o = {}){
+    if (reduced){ el.textContent = text; return; }
+    const caret = document.createElement('span'); caret.className = 'caret';
+    const tx = document.createTextNode(''); el.textContent = ''; el.append(tx, caret);
+    const per = Math.max(1, Math.ceil(text.length / 220));
+    let i = 0;
+    const tick = () => {
+      if (!el.isConnected) return;
+      i += per;
+      tx.data = text.slice(0, i);
+      if (i < text.length) setTimeout(tick, 24);
+      else if (o.loop) setTimeout(() => { i = 0; tick(); }, 2400);
+      else caret.remove();
+    };
+    tick();
+  }
+  function showTextSample(){
+    toolOut.innerHTML = `<div class="shots"><div class="shot"><h2><span class="badge">Contoh</span>&nbsp; Gambar</h2><img alt="Contoh gambar" src="${scene()}"></div><div class="shot"><h2>Prompt hasil</h2><div class="textres" id="sText"></div></div></div>`;
+    typer($('#sText'), SAMPLE_PROMPT, { loop:true });
+  }
   function showSample(t){
     toolOut.innerHTML = '';
+    if (t.kind === 'text'){ showTextSample(); return; }
     const pair = (SAMPLES[t.sample] || SAMPLES.sharp)();
     const wrap = document.createElement('div');
     wrap.appendChild(makeSlider(pair[0], pair[1], { cut: t.sample === 'cutout' }));
@@ -716,6 +833,7 @@ body:not(.view-tool) #toolView{display:none}
     wrap.appendChild(cap);
     toolOut.appendChild(wrap);
   }
+  function leaveTool(){ if (job){ job.abort(); job = null; } curTool = null; }
   function resetPicked(){
     if (job){ job.abort(); job = null; }
     if (fileUrl){ URL.revokeObjectURL(fileUrl); }
@@ -827,7 +945,7 @@ body:not(.view-tool) #toolView{display:none}
       $('#rBefore').src = before; $('#rAfter').src = out; $('#rOpen').href = out;
     } else {
       toolOut.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt="Gambar yang dianalisis"></div><div class="shot"><h2>Prompt</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin prompt</button></div></div></div>`;
-      $('#rBefore').src = before; $('#rText').textContent = out;
+      $('#rBefore').src = before; typer($('#rText'), out);
       $('#rCopyText').onclick = e => copyText(out, e.currentTarget, ICON.check + 'Tersalin');
     }
   }
@@ -872,6 +990,32 @@ body:not(.view-tool) #toolView{display:none}
       if (job === ctrl) job = null;
       if (curTool === t) setBusy(false);
     }
+  }
+
+  /* ---------- Halaman About website ---------- */
+  const aboutView = $('#aboutView');
+  const linkHtml = (name, url, color, ic, small) =>
+    `<a class="link" href="${url}" target="_blank" rel="noopener noreferrer"><i style="background:${color}">${ICON[ic]}</i><span><b>${esc(name)}</b><small>${esc(small)}</small></span>${ICON.arrow}</a>`;
+  const ABOUT_BODY = {
+    owner: () => `<div class="card profile"><div class="avatar"><span class="ini">X</span><img src="xyric.jpg" alt="Foto Xyric"></div><h2>Xyric</h2><span class="badge">Developer asal Bali</span><p>Halo, gue Xyric, developer asal Bali. Gue bikin CLARITY AI supaya ngobrol dengan AI dan mengolah gambar atau video bisa dilakukan di satu tempat, langsung dari HP tanpa instal aplikasi.</p><div class="chips2"><span>Developer</span><span>Bali, Indonesia</span><span>Pembuat CLARITY AI</span></div></div>`,
+    tujuan: () => `<div class="card txt"><h2>Satu tempat untuk AI dan olah gambar</h2><p>CLARITY AI dibuat supaya siapa saja bisa ngobrol dengan asisten AI dan mengolah gambar atau video langsung dari HP, tanpa instal aplikasi dan tanpa ribet.</p><p>Isinya obrolan AI, upscale, remini, hapus latar, hapus watermark, blur, gambar ke prompt, dan upscale video.</p></div><h3 class="sec">Channel Update Informasi</h3><div class="links">${LINKS.map(l => linkHtml(l.name, l.url, l.color, l.ic, l.url.replace(/^https?:\/\//, ''))).join('')}</div><p class="fine">Ikuti channel untuk kabar fitur baru dan perbaikan.</p>`,
+    bug: () => `<div class="card txt"><h2>Cara lapor bug</h2><p>Laporan yang lengkap bikin penyebab bug lebih cepat ketemu. Sertakan semua ini:</p><ul class="checks">`
+      + [['Screenshot', 'Tangkap seluruh layar, termasuk pesan error berwarna merah.'],
+         ['Awal mula', 'Ceritakan apa yang lu lakukan sebelum bug muncul, urut dari awal: halaman mana, alat apa, dan file apa yang dipakai.'],
+         ['Penyebab', 'Tulis kenapa menurut lu itu bisa terjadi, atau kondisi yang memicunya, misalnya ukuran file besar, koneksi putus, atau setelah menekan tombol tertentu.'],
+         ['Perangkat', 'Jenis HP, browser, dan jam kejadian.']
+        ].map(x => `<li>${ICON.check}<span><b>${x[0]}</b><small>${x[1]}</small></span></li>`).join('')
+      + `</ul></div><h3 class="sec">Template laporan</h3><div class="card" style="margin-top:0"><pre class="tpl">${esc(BUG_TEMPLATE)}</pre><div class="cmp-cap" style="margin-top:12px"><span>Salin, isi, lalu kirim bersama screenshot.</span><button class="mini" id="tplCopy" type="button">${ICON.copy}Salin template</button></div></div>`
+      + `<h3 class="sec">Contact Xyric</h3><div class="links">${linkHtml('Telegram', 'https://t.me/Senlith', '#229ed9', 'plane', 't.me/Senlith')}<div class="link-row"><a class="link" href="mailto:${EMAIL}"><i style="background:#d6561f">${ICON.mail}</i><span><b>Gmail</b><small>${EMAIL}</small></span></a><button class="mini ghost" id="mailCopy" type="button" aria-label="Salin alamat Gmail">${ICON.copy}</button></div></div>`
+  };
+  function openAbout(a){
+    aboutView.style.setProperty('--tool', a.color);
+    aboutView.scrollTop = 0;
+    $('#aboutHero').innerHTML = heroHtml(a);
+    $('#aboutBody').innerHTML = ABOUT_BODY[a.id]();
+    const im = aboutView.querySelector('.avatar img'); if (im) im.addEventListener('error', () => im.remove());
+    const tc = $('#tplCopy'); if (tc) tc.onclick = e => copyText(BUG_TEMPLATE, e.currentTarget, ICON.check + 'Tersalin');
+    const mc = $('#mailCopy'); if (mc) mc.onclick = e => copyText(EMAIL, e.currentTarget, ICON.check);
   }
 
   /* ---------- Mulai ---------- */
