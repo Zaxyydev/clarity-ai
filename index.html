@@ -733,7 +733,7 @@ body:not(.view-tool) #toolView{display:none}
     fileIn.accept = vid ? 'video/*' : 'image/*';
     goBtn.textContent = t.kind === 'text' ? 'Buat prompt' : 'Proses';
     $('#toolSteps').innerHTML = STEPS[t.kind].map((s, i) => `<div class="step"><i>${i + 1}</i><span>${s}</span></div>`).join('');
-    $('#toolFine').textContent = 'File diunggah sementara ke uguu.se supaya bisa diproses, lalu terhapus otomatis.';
+    $('#toolFine').textContent = 'File diunggah sementara ke catbox.moe atau uguu.se supaya bisa diproses.';
     showSample(t);
   }
 
@@ -768,7 +768,18 @@ body:not(.view-tool) #toolView{display:none}
   }
 
   async function uploadFile(f, signal){
-    // 1) langsung dari browser ke uguu.se
+    let hint = '';
+    // 1) lewat /api/upload di hosting sendiri: server meneruskan ke catbox.moe (cadangan uguu.se), tidak kena CORS. Maks 4 MB.
+    if (f.size <= 4 * 1048576){
+      try {
+        const r = await fetch('/api/upload?name=' + enc(f.name || 'file') + '&type=' + enc(f.type || ''), { method:'POST', headers:{ 'Content-Type':'application/octet-stream' }, body:f, signal });
+        const j = await r.json().catch(() => null);
+        if (r.ok && j && j.url) return j.url;
+        if (r.status === 404) hint = ' File api/upload.js belum terpasang di hosting.';
+        else if (j && j.message) hint = ' ' + j.message;
+      } catch(e){ if (e.name === 'AbortError') throw e; }
+    }
+    // 2) langsung dari browser ke uguu.se (berhasil hanya kalau uguu mengizinkan CORS)
     try {
       const fd = new FormData(); fd.append('files[]', f, f.name || 'file');
       const r = await fetch('https://uguu.se/upload', { method:'POST', body:fd, signal });
@@ -777,15 +788,7 @@ body:not(.view-tool) #toolView{display:none}
       catch(_){ if (/^https?:\/\//.test(raw.trim())) u = raw.trim().split('\n')[0]; }
       if (r.ok && u) return u;
     } catch(e){ if (e.name === 'AbortError') throw e; }
-    // 2) cadangan: fungsi /api/upload di hosting sendiri (maks 4 MB)
-    if (f.size <= 4 * 1048576){
-      try {
-        const r = await fetch('/api/upload?name=' + enc(f.name || 'file') + '&type=' + enc(f.type || ''), { method:'POST', headers:{ 'Content-Type':'application/octet-stream' }, body:f, signal });
-        const j = await r.json();
-        if (r.ok && j.url) return j.url;
-      } catch(e){ if (e.name === 'AbortError') throw e; }
-    }
-    throw new Error('Upload gagal. Coba lagi, atau pakai file yang lebih kecil.');
+    throw new Error('Upload gagal.' + hint + ' Coba lagi atau pakai file yang lebih kecil.');
   }
 
   function findUrl(d){
