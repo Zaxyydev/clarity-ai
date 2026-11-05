@@ -392,7 +392,7 @@ body:not(.view-about) #aboutView{display:none}
   /* ---------- Konfigurasi ---------- */
   const BASE = 'https://api.ikyyxd.my.id';
   const enc = encodeURIComponent;
-  const PERSONA = 'Kamu adalah CLARITY AI, asisten AI buatan Xyric. Kalau ada yang bertanya siapa kamu atau siapa yang membuatmu, jawab bahwa kamu CLARITY AI buatan Xyric. Jawab dengan bahasa yang dipakai pengguna, jelas dan ringkas.';
+  const PERSONA = 'Kamu adalah CLARITY AI, asisten AI buatan Sento. Sento adalah satu orang developer asal Bali, Indonesia, BUKAN perusahaan, BUKAN dari Swiss, dan bukan nama organisasi. Kalau ada yang bertanya siapa kamu, siapa yang membuatmu, atau siapa Sento, jawab singkat bahwa kamu CLARITY AI, dan pembuatmu adalah Sento, seorang developer individu asal Bali, Indonesia. Jangan pernah menyebut Sento sebagai perusahaan atau mengaitkannya dengan negara Swiss atau negara lain mana pun. Kalau kamu tidak yakin soal detail lain mengenai Sento, jangan mengarang, cukup jawab yang kamu tahu. Jawab dengan bahasa yang dipakai pengguna, jelas dan ringkas.';
   const chatUrl = q => `${BASE}/ai/publicai?apikey=kyzz&q=${enc(PERSONA + '\n\nPesan pengguna: ' + q)}`;
 
   const TOOLS = [
@@ -997,7 +997,7 @@ body:not(.view-about) #aboutView{display:none}
   const linkHtml = (name, url, color, ic, small) =>
     `<a class="link" href="${url}" target="_blank" rel="noopener noreferrer"><i style="background:${color}">${ICON[ic]}</i><span><b>${esc(name)}</b><small>${esc(small)}</small></span>${ICON.arrow}</a>`;
   const ABOUT_BODY = {
-    owner: () => `<div class="card profile"><div class="avatar"><span class="ini">X</span><img src="xyric.jpg" alt="Foto Xyric"></div><h2>Xyric</h2><span class="badge">Developer asal Bali</span><p>Halo, gue Xyric, developer asal Bali. Gue bikin CLARITY AI supaya ngobrol dengan AI dan mengolah gambar atau video bisa dilakukan di satu tempat, langsung dari HP tanpa instal aplikasi.</p><div class="chips2"><span>Developer</span><span>Bali, Indonesia</span><span>Pembuat CLARITY AI</span></div></div>`,
+    owner: () => `<div class="card profile"><div class="avatar"><span class="ini">S</span><img src="sento.jpg" alt="Foto Sento"></div><h2>Sento</h2><span class="badge">Developer asal Bali</span><p>Halo, gue Sento, satu orang developer asal Bali, Indonesia (bukan perusahaan, bukan dari Swiss). Gue bikin CLARITY AI supaya ngobrol dengan AI dan mengolah gambar atau video bisa dilakukan di satu tempat, langsung dari HP tanpa instal aplikasi.</p><div class="chips2"><span>Developer individu</span><span>Bali, Indonesia</span><span>Pembuat CLARITY AI</span></div></div>`,
     tujuan: () => `<div class="card txt"><h2>Satu tempat untuk AI dan olah gambar</h2><p>CLARITY AI dibuat supaya siapa saja bisa ngobrol dengan asisten AI dan mengolah gambar atau video langsung dari HP, tanpa instal aplikasi dan tanpa ribet.</p><p>Isinya obrolan AI, upscale, remini, hapus latar, hapus watermark, blur, gambar ke prompt, dan upscale video.</p></div><h3 class="sec">Channel Update Informasi</h3><div class="links">${LINKS.map(l => linkHtml(l.name, l.url, l.color, l.ic, l.url.replace(/^https?:\/\//, ''))).join('')}</div><p class="fine">Ikuti channel untuk kabar fitur baru dan perbaikan.</p>`,
     bug: () => `<div class="card txt"><h2>Cara lapor bug</h2><p>Laporan yang lengkap bikin penyebab bug lebih cepat ketemu. Sertakan semua ini:</p><ul class="checks">`
       + [['Screenshot', 'Tangkap seluruh layar, termasuk pesan error berwarna merah.'],
@@ -1006,7 +1006,7 @@ body:not(.view-about) #aboutView{display:none}
          ['Perangkat', 'Jenis HP, browser, dan jam kejadian.']
         ].map(x => `<li>${ICON.check}<span><b>${x[0]}</b><small>${x[1]}</small></span></li>`).join('')
       + `</ul></div><h3 class="sec">Template laporan</h3><div class="card" style="margin-top:0"><pre class="tpl">${esc(BUG_TEMPLATE)}</pre><div class="cmp-cap" style="margin-top:12px"><span>Salin, isi, lalu kirim bersama screenshot.</span><button class="mini" id="tplCopy" type="button">${ICON.copy}Salin template</button></div></div>`
-      + `<h3 class="sec">Contact Xyric</h3><div class="links">${linkHtml('Telegram', 'https://t.me/Senlith', '#229ed9', 'plane', 't.me/Senlith')}<div class="link-row"><a class="link" href="mailto:${EMAIL}"><i style="background:#d6561f">${ICON.mail}</i><span><b>Gmail</b><small>${EMAIL}</small></span></a><button class="mini ghost" id="mailCopy" type="button" aria-label="Salin alamat Gmail">${ICON.copy}</button></div></div>`
+      + `<h3 class="sec">Contact Sento</h3><div class="links">${linkHtml('Telegram', 'https://t.me/Senlith', '#229ed9', 'plane', 't.me/Senlith')}<div class="link-row"><a class="link" href="mailto:${EMAIL}"><i style="background:#d6561f">${ICON.mail}</i><span><b>Gmail</b><small>${EMAIL}</small></span></a><button class="mini ghost" id="mailCopy" type="button" aria-label="Salin alamat Gmail">${ICON.copy}</button></div></div>`
   };
   function openAbout(a){
     aboutView.style.setProperty('--tool', a.color);
