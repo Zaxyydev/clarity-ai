@@ -12,7 +12,7 @@
     { name:'Update 3',                 url:'https://t.me/aetherupdate',                             color:'#229ed9', ic:'plane' }
   ];
   const EMAIL = 'xyricnich@gmail.com';
-  const SUPPORT_URL = 'https://sociabuzz.com/kyoon7/shop';
+  const SUPPORT_URL = 'https://sociabuzz.com/kyoon7/tribe';
   const BUG_TEMPLATE = [
     'Halaman / alat yang dipakai:',
     '',

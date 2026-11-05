@@ -215,20 +215,27 @@
   };
 
   // Bangun & jalankan request GET (query string) atau POST JSON, dari semua field value.
+  // api.zyvor.my.id menolak dipanggil langsung dari browser (CORS), jadi request ke base itu
+  // dibelokkan lewat /api/zyvor?path=... (fungsi server di Vercel, nggak kena CORS).
+  App.proxyFor = function proxyFor(base){ return base === App.BASE_ZYVOR ? '/api/zyvor' : ''; };
+
   App.makeRun = function makeRun(opts){
     // opts: {method:'GET'|'POST', base, path, extra?:{}}
+    const proxy = App.proxyFor(opts.base);
     return async (vals, signal) => {
       const body = { ...vals, ...(opts.extra || {}) };
       if ((opts.method || 'GET') === 'GET'){
         const qs = new URLSearchParams();
         for (const k in body) if (body[k] !== undefined && body[k] !== '') qs.set(k, body[k]);
-        return App.apiFetch(`${opts.base}${opts.path}?${qs.toString()}`, { signal });
+        const target = `${opts.path}?${qs.toString()}`;
+        return proxy
+          ? App.apiFetch(`${proxy}?path=${enc(target)}`, { signal })
+          : App.apiFetch(`${opts.base}${target}`, { signal });
       }
-      return App.apiFetch(`${opts.base}${opts.path}`, {
-        method:'POST', signal,
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify(body)
-      });
+      const init = { method:'POST', signal, headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) };
+      return proxy
+        ? App.apiFetch(`${proxy}?path=${enc(opts.path)}`, init)
+        : App.apiFetch(`${opts.base}${opts.path}`, init);
     };
   };
 

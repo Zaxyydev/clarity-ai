@@ -9,10 +9,11 @@
   const FINE_UP = 'File diunggah sementara ke catbox.moe atau uguu.se supaya bisa diproses.';
 
   function multipart(path, build){
+    // api.zyvor.my.id menolak panggilan langsung dari browser, jadi lewat /api/zyvor dulu.
     return async (vals, signal) => {
       const fd = new FormData();
       build(fd, vals);
-      return App.apiFetch(`${ZY}${path}`, { method:'POST', body:fd, signal });
+      return App.apiFetch(`/api/zyvor?path=${App.enc(path)}`, { method:'POST', body:fd, signal });
     };
   }
 
