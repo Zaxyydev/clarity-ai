@@ -66,9 +66,11 @@
       method:'GET', base:ZY, path:'/api/tools/qr2text', goLabel:'Baca QR' },
 
     { id:'qrisinfo', name:'Cek QRIS', color:'#2f9b4f', kind:'kv',
-      desc:'Lihat info merchant dari kode QRIS.', icon:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><path d="M14 17.5h6"/>',
-      fields:[{ key:'qris', type:'textarea', label:'Kode QRIS', placeholder:'Tempel string QRIS di sini' }],
-      method:'POST', base:ZY, path:'/api/tools/qris-info', goLabel:'Cek' },
+      desc:'Lihat info merchant dari kode QRIS. Ini butuh teks/string QRIS, bukan foto. Belum punya teksnya? Buka dulu alat "QR ke teks", unggah foto kode QRIS di sana, salin hasilnya, lalu tempel di sini.',
+      icon:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><path d="M14 17.5h6"/>',
+      fields:[{ key:'qris', type:'textarea', label:'Kode / string QRIS', placeholder:'Belum punya teksnya? Pakai alat "QR ke teks" dulu dari foto kode QRIS, lalu tempel hasilnya di sini.' }],
+      method:'POST', base:ZY, path:'/api/tools/qris-info', goLabel:'Cek',
+      fine:'Butuh teks QRIS, bukan foto. Dapatkan teksnya lewat alat "QR ke teks" (unggah foto kode QRIS di sana).' },
 
     { id:'scanweb', name:'Scan website', color:'#2f6b9b', kind:'kv',
       desc:'Pindai info dasar dari sebuah situs.', icon:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',

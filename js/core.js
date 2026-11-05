@@ -135,10 +135,18 @@
   /* ========== Slider Before / After ========== */
   App.makeSlider = function makeSlider(beforeSrc, afterSrc, o = {}){
     const el = document.createElement('div'); el.className = 'cmp';
-    el.innerHTML = `<div class="cmp-stage${o.cut ? ' cut' : ''}"><img class="cmp-after" alt="After"><img class="cmp-before" alt="Before"><span class="tag l">Before</span><span class="tag r">After</span><div class="cmp-handle" role="slider" tabindex="0" aria-label="Geser untuk membandingkan Before dan After" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="grip">${ICON.lr}</span></div></div>`;
+    el.innerHTML = `<div class="cmp-stage${o.cut ? ' cut' : ''}"><img class="cmp-after" alt="After" referrerpolicy="no-referrer"><img class="cmp-before" alt="Before" referrerpolicy="no-referrer"><span class="tag l">Before</span><span class="tag r">After</span><div class="cmp-handle" role="slider" tabindex="0" aria-label="Geser untuk membandingkan Before dan After" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span class="grip">${ICON.lr}</span></div></div>`;
     const st = el.firstChild, h = st.querySelector('.cmp-handle'), b = st.querySelector('.cmp-before'), a = st.querySelector('.cmp-after');
     let cur = 50, drag = false;
     b.addEventListener('load', () => { if (b.naturalWidth) st.style.aspectRatio = b.naturalWidth + '/' + b.naturalHeight; });
+    const warn = (label) => {
+      if (el.querySelector('.cmp-warn')) return;
+      const w = document.createElement('p'); w.className = 'cmp-warn';
+      w.textContent = `Pratinjau ${label} gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah untuk melihatnya.`;
+      el.appendChild(w);
+    };
+    b.addEventListener('error', () => warn('Before'));
+    a.addEventListener('error', () => warn('After'));
     b.src = beforeSrc; a.src = afterSrc;
     const set = p => { p = Math.max(0, Math.min(100, p)); cur = p; st.style.setProperty('--pos', p + '%'); h.setAttribute('aria-valuenow', String(Math.round(p))); };
     const fromEvent = e => { const r = st.getBoundingClientRect(); if (r.width) set((e.clientX - r.left) / r.width * 100); };
@@ -368,8 +376,9 @@
     container.innerHTML = '';
     if (kind === 'image-compare' || kind === 'video-compare'){
       if (kind === 'video-compare'){
-        container.innerHTML = `<div class="shots"><div class="shot"><h2>Before</h2><video id="rBefore" controls playsinline preload="metadata"></video></div><div class="shot"><h2>After</h2><video id="rAfter" controls playsinline preload="metadata"></video><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a></div></div></div>`;
+        container.innerHTML = `<div class="shots"><div class="shot"><h2>Before</h2><video id="rBefore" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video></div><div class="shot"><h2>After</h2><video id="rAfter" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video><p class="cmp-warn" id="rAfterWarn" hidden>Video gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a></div></div></div>`;
         $('#rBefore').src = payload.before; $('#rAfter').src = payload.after; $('#rOpen').href = payload.after;
+        $('#rAfter').addEventListener('error', () => { $('#rAfterWarn').hidden = false; });
         return;
       }
       const wrap = document.createElement('div');
@@ -384,20 +393,21 @@
     }
     if (kind === 'three-shots'){
       container.innerHTML = `<div class="shots">${payload.shots.map((s, i) =>
-        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${s.src}" alt="${esc(s.label || '')}"></div>`
+        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${s.src}" alt="${esc(s.label || '')}" referrerpolicy="no-referrer" onerror="this.insertAdjacentHTML('afterend','<p class=&quot;cmp-warn&quot;>Gambar gagal dimuat di sini.</p>');this.remove()"></div>`
       ).join('')}</div>`;
       return;
     }
     if (kind === 'image-single'){
-      container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><img id="rImg" alt="Hasil"><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></div></div></div>`;
+      container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><img id="rImg" alt="Hasil" referrerpolicy="no-referrer"><p class="cmp-warn" id="rImgWarn" hidden>Gambar gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></div></div></div>`;
       $('#rImg').src = payload.image; $('#rOpen').href = payload.image;
+      $('#rImg').addEventListener('error', () => { $('#rImgWarn').hidden = false; });
       if (payload.image.startsWith('blob:')){ $('#rOpen').download = 'hasil'; const rc = $('#rCopy'); if (rc) rc.remove(); }
       else { const rc = $('#rCopy'); if (rc) rc.onclick = e => App.copyText(payload.image, e.currentTarget, ICON.check); }
       return;
     }
     if (kind === 'text'){
       if (payload.image){
-        container.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt=""></div><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button></div></div></div>`;
+        container.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt="" referrerpolicy="no-referrer"></div><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button></div></div></div>`;
         $('#rBefore').src = payload.image;
       } else {
         container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button></div></div></div>`;
@@ -418,7 +428,7 @@
         : ICON.link2;
       const isImg = url => /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
       container.innerHTML = `<div class="dllist">${payload.links.map((l, i) =>
-        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Buka</a></div>`
+        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Buka</a></div>`
       ).join('')}</div><p class="fine">Sebagian platform tidak mengizinkan unduh otomatis lewat browser — kalau tombol cuma membuka file di tab baru, tahan gambar/video lalu pilih simpan.</p>`;
       return;
     }
