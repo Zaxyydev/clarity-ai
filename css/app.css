@@ -177,11 +177,23 @@ body.drawer-open #drawer{transform:none;visibility:visible;transition-delay:0s}
 .newchat{margin:10px 16px 0;height:52px;border-radius:26px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px}
 
 /* tool page */
-body.view-tool #scroll,body.view-tool footer,body.view-about #scroll,body.view-about footer{display:none}
+body.view-tool #scroll,body.view-tool footer,body.view-about #scroll,body.view-about footer,body.view-movie #scroll,body.view-movie footer{display:none}
 body:not(.view-tool) #toolView{display:none}
 body:not(.view-about) #aboutView{display:none}
+body:not(.view-movie) #movieView{display:none}
 #aboutView{--tool:#6b5ce7;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
 #toolView{--tool:#0b9c84;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
+#movieView{--tool:#b5451f;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 28px}
+
+.mv-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.mv-top i{width:38px;height:38px;border-radius:12px;background:var(--tool);display:flex;align-items:center;justify-content:center;flex:none;color:#fff}
+.mv-top i svg{width:20px;height:20px}
+.mv-top h1{font-size:20px;margin:0}
+.mv-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 6px 0 14px;margin-bottom:16px;height:48px}
+.mv-search .ic{width:18px;height:18px;color:var(--muted);flex:none}
+.mv-search input{flex:1;border:0;background:none;height:100%;font-size:15px;color:var(--fg);min-width:0}
+.mv-search input:focus{outline:none}
+.mv-search button{flex:none;border:0;border-radius:12px;background:var(--tool);color:#fff;font-weight:600;font-size:13.5px;padding:0 16px;height:36px}
 .hero{
   position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 24px;
   background:var(--surface);border:1px solid var(--line);
