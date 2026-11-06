@@ -377,6 +377,25 @@
     const v = pickField(o, ['desc','description','synopsis','overview','subtitle','summary']);
     return typeof v === 'string' ? v : '';
   }
+  function movieGenre(o){
+    let v = pickField(o, ['genre','category','subject','type','tags']);
+    if (Array.isArray(v)) v = v[0];
+    return (typeof v === 'string' && v) ? v : '';
+  }
+  // Link download langsung archive.org (https://archive.org/download/<identifier>/<file>) kalau
+  // nama filenya ketemu — ini lebih bisa diandalkan daripada embed player umum yang kadang nge-blank.
+  function archiveFileUrl(o, archId){
+    if (!archId) return '';
+    let f = pickField(o, ['file','filename','video_file']);
+    if (f && typeof f === 'object') f = pickField(f, ['name','file']);
+    if (typeof f === 'string' && f) return 'https://archive.org/download/' + encodeURIComponent(archId) + '/' + encodeURIComponent(f);
+    const files = Array.isArray(o && o.files) ? o.files : null;
+    if (files){
+      const hit = files.find(x => x && typeof x === 'object' && /\.(mp4|m4v|webm|ogv)$/i.test(String(x.name || x.file || '')));
+      if (hit) return 'https://archive.org/download/' + encodeURIComponent(archId) + '/' + encodeURIComponent(hit.name || hit.file);
+    }
+    return '';
+  }
 
   // Tampilan ala Netflix: grid poster → ketuk buka halaman detail dengan tombol Play.
   function renderMovie(container, data){
@@ -389,13 +408,27 @@
         (links.length ? `<div class="dllist">${links.map(l => `<div class="dlrow"><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer">${ICON.open}Buka</a></div>`).join('')}</div>` : '');
       return;
     }
+    function cardHtml(it, i){
+      const p = moviePoster(it), t = movieTitle(it);
+      return `<button type="button" class="mv-card" data-i="${i}">` +
+        (p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : `<span class="mv-ph">${ICON.film}</span>`) +
+        `<span class="mv-t">${esc(t)}</span></button>`;
+    }
     function showGrid(){
-      container.innerHTML = `<div class="mv-grid">${items.map((it, i) => {
-        const p = moviePoster(it), t = movieTitle(it);
-        return `<button type="button" class="mv-card" data-i="${i}">` +
-          (p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : `<span class="mv-ph">${ICON.film}</span>`) +
-          `<span class="mv-t">${esc(t)}</span></button>`;
-      }).join('')}</div>`;
+      // Kelompokkan jadi baris per genre/kategori kalau datanya ada field genre — semua film tetap
+      // ditampilkan (nggak dipotong), cuma disusun ke bawah ala Netflix dengan animasi masuk.
+      const groups = []; const byGenre = {};
+      items.forEach((it, i) => {
+        const g = movieGenre(it) || '';
+        if (!byGenre[g]){ byGenre[g] = { name: g, idx: [] }; groups.push(byGenre[g]); }
+        byGenre[g].idx.push(i);
+      });
+      const multiRow = groups.length > 1;
+      container.innerHTML = groups.map((g, gi) => `
+        <div class="mv-row" style="animation-delay:${Math.min(gi, 8) * 70}ms">
+          ${multiRow ? `<h3 class="mv-rowtitle">${esc(g.name || 'Lainnya')}</h3>` : ''}
+          <div class="mv-grid">${g.idx.map(i => cardHtml(items[i], i)).join('')}</div>
+        </div>`).join('');
       container.querySelectorAll('.mv-card').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
     }
     function episodesOf(o){
@@ -405,13 +438,21 @@
       }
       return null;
     }
+    function isKnownEmbed(url){
+      return /archive\.org\/embed\//i.test(url) || /youtube\.com\/embed\//i.test(url) || /player\.vimeo\.com/i.test(url);
+    }
     function playInfo(o){
       const v = findUrl(o);
       const archId = archiveIdentifier(o);
-      const embed = (!v && archId) ? 'https://archive.org/embed/' + encodeURIComponent(archId) : '';
-      const url = v || embed;
-      const direct = !!v && /\.(mp4|m3u8|webm|mov)(\?|$)/i.test(v);
-      return { url, direct, embed: !!embed };
+      const archFile = (!v && archId) ? archiveFileUrl(o, archId) : '';
+      const embed = (!v && !archFile && archId) ? 'https://archive.org/embed/' + encodeURIComponent(archId) : '';
+      const url = v || archFile || embed;
+      const direct = !!(v || archFile) && /\.(mp4|m4v|m3u8|webm|mov|ogv)(\?|$)/i.test(v || archFile);
+      // Cuma file video langsung atau embed yang sudah dikenal aman yang diputar di dalam halaman.
+      // Link halaman situs biasa (misalnya link ke melolo.com) dibuka di tab baru, soalnya kalau
+      // dipaksa nge-iframe, kebanyakan situs nolak (muncul "menolak untuk tersambung").
+      const embeddable = direct || isKnownEmbed(url);
+      return { url, direct, embeddable };
     }
     function showHero(it){
       const p = moviePoster(it), t = movieTitle(it), d = movieDesc(it);
@@ -423,10 +464,12 @@
           ${p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
           <div class="mv-grad"></div>
           ${items.length > 1 ? `<button type="button" class="mv-back">${ICON.back}</button>` : ''}
-          ${pl.url ? `<button type="button" class="mv-playbtn" aria-label="Play">${ICON.play}</button>` : ''}
+          ${pl.url
+            ? `<button type="button" class="mv-playbtn" aria-label="Play">${ICON.play}</button>`
+            : `<div class="mv-noplay">${ICON.film}<span>Link nonton belum ketemu</span></div>`}
         </div>
         <div class="mv-info"><h2>${esc(t)}</h2>${d ? `<p>${esc(d)}</p>` : ''}
-          ${!pl.url ? `<p class="cmp-warn" style="margin:10px 0 0">Link nonton belum ketemu otomatis di data ini.</p>` : ''}
+          ${!pl.url ? `<p class="cmp-warn" style="margin:10px 0 0">Server tidak mengirim link yang bisa dikenali buat film ini. Coba film lain, atau mungkin perlu action lain di API-nya.</p>` : ''}
         </div>
         ${episodes ? `<div class="mv-sec"><h3>Episode</h3><div class="mv-eprow">${episodes.map((e, i) =>
             `<button type="button" class="mv-ep" data-i="${i}">${esc(pickField(e, ['episode','ep','name','title']) || ('Eps ' + (i + 1)))}</button>`
@@ -452,12 +495,16 @@
         });
       }
       const back = container.querySelector('.mv-back'); if (back) back.addEventListener('click', showGrid);
-      const pb = container.querySelector('.mv-playbtn'); if (pb) pb.addEventListener('click', () => playNow(pl.url, pl.direct));
+      const pb = container.querySelector('.mv-playbtn'); if (pb) pb.addEventListener('click', () => {
+        if (pl.embeddable) playNow(pl.url, pl.direct);
+        else window.open(pl.url, '_blank', 'noopener,noreferrer');
+      });
       container.querySelectorAll('.mv-ep').forEach(b => b.addEventListener('click', () => {
         const epIt = episodes[+b.dataset.i];
         const epl = playInfo(epIt);
         container.querySelectorAll('.mv-ep').forEach(x => x.classList.remove('on')); b.classList.add('on');
-        if (epl.url) playNow(epl.url, epl.direct);
+        if (epl.url && epl.embeddable) playNow(epl.url, epl.direct);
+        else if (epl.url) window.open(epl.url, '_blank', 'noopener,noreferrer');
         else { b.insertAdjacentHTML('afterend', `<span class="mv-eperr">Link episode ini belum ketemu.</span>`); setTimeout(() => { const w = container.querySelector('.mv-eperr'); if (w) w.remove(); }, 2500); }
       }));
       container.querySelectorAll('.mv-rec').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
