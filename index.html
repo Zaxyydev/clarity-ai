@@ -16,9 +16,13 @@
     <button class="circle" id="menuBtn" aria-label="Buka menu">
       <svg class="ic" viewBox="0 0 24 24"><path d="M4 9h14M4 15h9"/></svg>
     </button>
-    <div class="brand">
-      <svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none;width:20px;height:20px"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
-      CLARITY AI
+    <div class="brandwrap">
+      <button class="brand" id="modelBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <svg class="ic" viewBox="0 0 24 24" style="fill:currentColor;stroke:none;width:20px;height:20px"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
+        <span id="modelBtnLabel">CLARITY AI</span>
+        <svg class="ic chev" viewBox="0 0 24 24" style="width:16px;height:16px;stroke-width:2.4"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="modelmenu" id="modelMenu" role="listbox" hidden></div>
     </div>
     <span class="spacer"></span>
     <button class="circle" id="newTop" aria-label="Obrolan baru">
@@ -92,6 +96,7 @@
 <script src="js/core.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/tools.js"></script>
+<script src="js/movie.js"></script>
 <script src="js/toolsmenu.js"></script>
 <script src="js/downloader.js"></script>
 <script src="js/about.js"></script>
