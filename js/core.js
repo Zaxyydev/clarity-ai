@@ -47,7 +47,8 @@
     qr: svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><path d="M14 14h3v3h-3zM14 20h3M20 17v3"/>'),
     cam: svg('<path d="M4 8h3l1.6-2.2A2 2 0 0 1 10.2 5h3.6a2 2 0 0 1 1.6.8L17 8h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/><circle cx="12" cy="13.5" r="3.6"/>'),
     play: svg('<path d="M7 4.5l13 7.5-13 7.5z" style="fill:currentColor"/>'),
-    back: svg('<path d="M15 19l-7-7 7-7"/>')
+    back: svg('<path d="M15 19l-7-7 7-7"/>'),
+    expand: svg('<path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M4 15v4a1 1 0 0 0 1 1h4"/>')
   };
   App.fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
@@ -397,38 +398,72 @@
       }).join('')}</div>`;
       container.querySelectorAll('.mv-card').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
     }
+    function episodesOf(o){
+      if (!o || typeof o !== 'object') return null;
+      for (const k of ['episodes','episode_list','episodeList','chapters','eps']){
+        if (Array.isArray(o[k]) && o[k].length) return o[k];
+      }
+      return null;
+    }
+    function playInfo(o){
+      const v = findUrl(o);
+      const archId = archiveIdentifier(o);
+      const embed = (!v && archId) ? 'https://archive.org/embed/' + encodeURIComponent(archId) : '';
+      const url = v || embed;
+      const direct = !!v && /\.(mp4|m3u8|webm|mov)(\?|$)/i.test(v);
+      return { url, direct, embed: !!embed };
+    }
     function showHero(it){
       const p = moviePoster(it), t = movieTitle(it), d = movieDesc(it);
-      const v = findUrl(it);
-      const archId = archiveIdentifier(it);
-      const embed = (!v && archId) ? 'https://archive.org/embed/' + encodeURIComponent(archId) : '';
-      const playUrl = v || embed;
-      const direct = v && /\.(mp4|m3u8|webm|mov)(\?|$)/i.test(v);
+      const pl = playInfo(it);
+      const episodes = episodesOf(it);
+      const recIdx = items.length > 1 ? items.map((x, i) => i).filter(i => items[i] !== it) : [];
       container.innerHTML = `<div class="mv-hero">
-        ${items.length > 1 ? `<button type="button" class="mv-back">${ICON.back}Kembali</button>` : ''}
-        <div class="mv-bd">${p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div class="mv-grad"></div></div>
-        <div class="mv-info"><h2>${esc(t)}</h2>${d ? `<p>${esc(d)}</p>` : ''}
-          <div class="mv-acts">${playUrl
-            ? `<a class="mv-play" href="${esc(playUrl)}" target="_blank" rel="noopener noreferrer">${ICON.play}Play</a>`
-            : `<span class="cmp-warn" style="margin:0">Link nonton belum ketemu otomatis di data ini.</span>`}</div>
+        <div class="mv-stage" id="mvStage">
+          ${p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+          <div class="mv-grad"></div>
+          ${items.length > 1 ? `<button type="button" class="mv-back">${ICON.back}</button>` : ''}
+          ${pl.url ? `<button type="button" class="mv-playbtn" aria-label="Play">${ICON.play}</button>` : ''}
         </div>
-        <div class="mv-player" hidden></div>
+        <div class="mv-info"><h2>${esc(t)}</h2>${d ? `<p>${esc(d)}</p>` : ''}
+          ${!pl.url ? `<p class="cmp-warn" style="margin:10px 0 0">Link nonton belum ketemu otomatis di data ini.</p>` : ''}
+        </div>
+        ${episodes ? `<div class="mv-sec"><h3>Episode</h3><div class="mv-eprow">${episodes.map((e, i) =>
+            `<button type="button" class="mv-ep" data-i="${i}">${esc(pickField(e, ['episode','ep','name','title']) || ('Eps ' + (i + 1)))}</button>`
+          ).join('')}</div></div>` : ''}
+        ${recIdx.length ? `<div class="mv-sec"><h3>Rekomendasi</h3><div class="mv-grid mv-grid-sm">${recIdx.map(i => {
+            const ri = items[i], rp = moviePoster(ri), rt = movieTitle(ri);
+            return `<button type="button" class="mv-card mv-rec" data-i="${i}">` +
+              (rp ? `<img src="${esc(rp)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : `<span class="mv-ph">${ICON.film}</span>`) +
+              `<span class="mv-t">${esc(rt)}</span></button>`;
+          }).join('')}</div></div>` : ''}
       </div>`;
-      const back = container.querySelector('.mv-back'); if (back) back.addEventListener('click', showGrid);
-      if (direct || embed){
-        container.querySelector('.mv-play').addEventListener('click', e => {
-          e.preventDefault();
-          const ph = container.querySelector('.mv-player');
-          ph.hidden = false;
-          ph.innerHTML = direct
-            ? `<video controls autoplay playsinline referrerpolicy="no-referrer" src="${esc(v)}"></video>`
-            : `<iframe src="${esc(embed)}" allowfullscreen referrerpolicy="no-referrer" allow="autoplay"></iframe>`;
-          ph.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      const stage = container.querySelector('#mvStage');
+      function playNow(url, direct){
+        stage.innerHTML = (direct
+          ? `<video controls autoplay playsinline referrerpolicy="no-referrer" src="${esc(url)}"></video>`
+          : `<iframe src="${esc(url)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`)
+          + `<button type="button" class="mv-fs" aria-label="Perbesar">${ICON.expand}</button>`;
+        const fs = stage.querySelector('.mv-fs');
+        fs.addEventListener('click', () => {
+          const el = stage.querySelector('video,iframe');
+          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+          else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
         });
       }
-      if (!playUrl){
+      const back = container.querySelector('.mv-back'); if (back) back.addEventListener('click', showGrid);
+      const pb = container.querySelector('.mv-playbtn'); if (pb) pb.addEventListener('click', () => playNow(pl.url, pl.direct));
+      container.querySelectorAll('.mv-ep').forEach(b => b.addEventListener('click', () => {
+        const epIt = episodes[+b.dataset.i];
+        const epl = playInfo(epIt);
+        container.querySelectorAll('.mv-ep').forEach(x => x.classList.remove('on')); b.classList.add('on');
+        if (epl.url) playNow(epl.url, epl.direct);
+        else { b.insertAdjacentHTML('afterend', `<span class="mv-eperr">Link episode ini belum ketemu.</span>`); setTimeout(() => { const w = container.querySelector('.mv-eperr'); if (w) w.remove(); }, 2500); }
+      }));
+      container.querySelectorAll('.mv-rec').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
+      if (!pl.url){
         const links = App.findLinks(it);
-        if (links.length) container.querySelector('.mv-acts').insertAdjacentHTML('beforeend',
+        if (links.length) container.querySelector('.mv-info').insertAdjacentHTML('beforeend',
           `<div class="dllist">${links.map(l => `<div class="dlrow"><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer">${ICON.open}Buka</a></div>`).join('')}</div>`);
       }
     }
