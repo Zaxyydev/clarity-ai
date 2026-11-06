@@ -830,13 +830,13 @@
     const hash = location.hash.slice(1);
     if (hash === 'tools' || hash === 'upscale'){ history.replaceState(null, '', '#t-upscale'); return App.route(); }
     const found = findItem(hash);
-    document.body.classList.remove('view-tool', 'view-about');
+    document.body.classList.remove('view-tool', 'view-about', 'view-movie');
     if (found) document.body.classList.add(found.sec.viewClass || 'view-tool');
     App.closeDrawer();
     if (found){
       App.markNav(hash);
       App.leaveChat && App.leaveChat();
-      if ((found.sec.viewClass || 'view-tool') !== 'view-about') App.leaveToolPage();
+      if ((found.sec.viewClass || 'view-tool') === 'view-tool') App.leaveToolPage();
       found.sec.open(found.item, hash);
       return;
     }
