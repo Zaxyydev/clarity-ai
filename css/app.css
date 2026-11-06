@@ -366,6 +366,14 @@ body:not(.view-movie) #movieView{display:none}
 .support a.mini{padding:12px 22px;font-size:16px;border-radius:18px}
 
 /* movie.js: tampilan grid poster + halaman detail ala Netflix */
+.mv-row{opacity:0;animation:mvRowIn .5s cubic-bezier(.16,1,.3,1) both}
+.mv-row+.mv-row{margin-top:24px}
+.mv-rowtitle{margin:0 0 10px;font-size:15px;font-weight:700}
+@keyframes mvRowIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){.mv-row{animation:none;opacity:1}}
+.mv-noplay{position:absolute;inset:0;margin:auto;width:max-content;height:38px;padding:0 16px;border-radius:999px;
+  background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;backdrop-filter:blur(3px)}
+.mv-noplay svg{width:16px;height:16px}
 .mv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px;margin-top:4px}
 .mv-card{position:relative;aspect-ratio:2/3;border:0;border-radius:14px;overflow:hidden;background:var(--bubble);padding:0;box-shadow:var(--shadow)}
 .mv-card img{width:100%;height:100%;object-fit:cover;display:block}
