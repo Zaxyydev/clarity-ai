@@ -11,6 +11,19 @@
   App.BASE_ZYVOR = 'https://api.zyvor.my.id';
   const enc = App.enc = encodeURIComponent;
 
+  /* ========== Versi aplikasi ========== */
+  App.VERSION = '2.0.0';
+  App.CHANGELOG = [
+    { v:'2.0.0', date:'November 2026', items:[
+      'CLARITY AI sekarang bisa di-install jadi aplikasi (Add to Home Screen) dan buka tanpa browser.',
+      'Kategori baru "Maker": generator kartu profil, meme, dan kartu ucapan dari foto/teks.',
+      'Fitur Movie/Film & Drama dihapus (berat, lag, dan penuh iklan).',
+      'Daftar model AI di chat sekarang ikut update otomatis dari server.',
+      'Animasi layar awal chat dibikin lebih halus.',
+      'Pengingat join channel WhatsApp buat info update, muncul sekali di kunjungan pertama.'
+    ] }
+  ];
+
   /* ========== Util kecil ========== */
   const $ = App.$ = s => document.querySelector(s);
   App.$$ = s => Array.from(document.querySelectorAll(s));
@@ -432,7 +445,7 @@
         : ICON.link2;
       const isImg = url => /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
       container.innerHTML = `<div class="dllist">${payload.links.map((l, i) =>
-        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Buka</a></div>`
+        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Download</a></div>`
       ).join('')}</div><p class="fine">Sebagian platform tidak mengizinkan unduh otomatis lewat browser — kalau tombol cuma membuka file di tab baru, tahan gambar/video lalu pilih simpan.</p>`;
       return;
     }
@@ -720,7 +733,25 @@
     el.querySelector('.chprompt-join').addEventListener('click', dismiss);
   }
 
+  /* ========== Install sebagai aplikasi (PWA) ========== */
+  let deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstall = e;
+    document.dispatchEvent(new CustomEvent('clarity:installready'));
+  });
+  window.addEventListener('appinstalled', () => { deferredInstall = null; });
+  App.canInstall = () => !!deferredInstall;
+  App.promptInstall = async () => {
+    if (!deferredInstall) return 'unavailable';
+    deferredInstall.prompt();
+    const { outcome } = await deferredInstall.userChoice;
+    deferredInstall = null;
+    return outcome; // 'accepted' | 'dismissed'
+  };
+
   App.boot = function boot(){
+    const verEl = $('#appVersion'); if (verEl) verEl.textContent = 'v' + App.VERSION;
     App.toolEl = {
       view: $('#toolView'), hero: $('#toolHero'), form: $('#toolForm'), fields: $('#toolFields'),
       status: $('#toolStatus'), out: $('#toolOut'), steps: $('#toolSteps'), fine: $('#toolFine'), goBtn: $('#goBtn')
