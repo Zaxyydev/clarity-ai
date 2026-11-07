@@ -70,6 +70,41 @@
   const MODEL_BY_ID = {}; MODELS.forEach(m => MODEL_BY_ID[m.id] = m);
   const defaultModelId = () => store.get('clarity.lastModel', 'beta1');
 
+  // Model tambahan diambil otomatis dari /api/v3/models (daftar model yang dipakai endpoint
+  // chatai), biar nggak perlu nebak-nebak nama model yang tersedia di sana satu-satu.
+  function prettyModelName(s){
+    return String(s).replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim() || 'Lainnya';
+  }
+  let dynModelsLoaded = false;
+  async function loadDynamicModels(){
+    try {
+      const res = await zyGet('/api/v3/models', {}, undefined);
+      if (!res.data || res.data.status === false) return;
+      let list = res.data;
+      if (list && !Array.isArray(list)) list = list.models || list.result || list.data || list.list || [];
+      if (!Array.isArray(list)) return;
+      list.forEach(m => {
+        const id = typeof m === 'string' ? m : (m && (m.id || m.model || m.name) || '');
+        if (!id || MODEL_BY_ID['dyn:' + id]) return;
+        const label = (typeof m === 'object' && (m.name || m.label)) || id;
+        const entry = {
+          id: 'dyn:' + id,
+          name: 'Clarity ' + prettyModelName(label),
+          desc: 'Model tambahan dari daftar model yang tersedia di server.',
+          run: async (q, cid, signal) => {
+            const r = await zyPost('/api/ai/chatai', { teks:q, model:id, session:cid, stream:'false' }, signal);
+            checkStatus(r);
+            const t = pickText(r.data).trim();
+            if (!t) throw new Error('Server membalas tanpa isi.');
+            return t;
+          }
+        };
+        MODELS.push(entry); MODEL_BY_ID[entry.id] = entry;
+      });
+      dynModelsLoaded = true;
+    } catch(e){ /* diam-diam: daftar model statis di atas tetap jalan kalau ini gagal */ }
+  }
+
   let chats = store.get('clarity.chats', {});
   let chat = null;
   Object.values(chats).forEach(c => c.msgs.forEach(m => { if (m.pending){ m.pending = false; m.err = 'Koneksi terputus sebelum jawaban datang.'; } }));
@@ -272,4 +307,6 @@
     input.value = '';
     autosize();
   };
+
+  loadDynamicModels();
 })();
