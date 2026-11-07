@@ -114,28 +114,36 @@ header{display:flex;align-items:center;gap:10px;padding-block:calc(env(safe-area
   animation:drift 9s ease-in-out infinite}
 #empty .rings{position:absolute;z-index:0;width:210px;height:210px;border-radius:50%;border:1px solid var(--line);
   box-shadow:0 0 0 40px color-mix(in srgb,var(--line) 45%,transparent),0 0 0 84px color-mix(in srgb,var(--line) 22%,transparent),0 0 0 130px color-mix(in srgb,var(--line) 10%,transparent)}
+#empty .rings::after{content:'';position:absolute;inset:0;border-radius:50%;border:1px solid var(--accent);opacity:0}
 #empty .spk{position:absolute;z-index:0;color:var(--accent);opacity:.7;animation:drift 6s ease-in-out infinite}
 #empty .spk.a{top:14%;left:14%;width:20px;height:20px}
 #empty .spk.b{top:26%;right:12%;width:30px;height:30px;color:var(--indigo);animation-delay:-2s}
 #empty .spk.c{bottom:20%;left:22%;width:14px;height:14px;color:var(--indigo);animation-delay:-4s}
+#empty .eyebrow{display:block;font-size:12px;font-weight:700;letter-spacing:.3em;color:var(--accent);margin-bottom:2px}
 #empty h1{margin:0;font-size:clamp(30px,9vw,44px);letter-spacing:.04em;font-weight:700}
 #empty h1 b{color:var(--accent);font-weight:700}
 #empty p{margin:0;color:var(--muted);font-size:17px}
 @keyframes drift{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.04)}}
-/* Animasi masuk: tiap elemen punya jeda sendiri-sendiri (cascade) + sedikit "lenting" di akhir,
-   biar nggak kaku kayak satu blok kaku geser bareng. emptyFx cuma sentuh opacity/blur, jadi nggak
-   bentrok sama animasi "drift" yang udah jalan terus-terusan di orb/rings/spk (beda properti). */
-#empty.enter{animation:emptyIn .7s cubic-bezier(.22,1,.36,1) both}
-#empty.enter .orb{animation:emptyFx .8s cubic-bezier(.22,1,.36,1) both, drift 9s ease-in-out infinite .5s}
-#empty.enter .rings{animation:emptyFx .8s cubic-bezier(.22,1,.36,1) .08s both}
-#empty.enter .spk.a{animation:emptyFx .6s cubic-bezier(.22,1,.36,1) .16s both, drift 6s ease-in-out infinite .5s}
-#empty.enter .spk.b{animation:emptyFx .6s cubic-bezier(.22,1,.36,1) .22s both, drift 6s ease-in-out infinite -1.8s}
-#empty.enter .spk.c{animation:emptyFx .6s cubic-bezier(.22,1,.36,1) .28s both, drift 6s ease-in-out infinite -3.8s}
-#empty.enter h1{animation:emptyUp .6s cubic-bezier(.22,1,.36,1) .34s both}
-#empty.enter p{animation:emptyUp .6s cubic-bezier(.22,1,.36,1) .42s both}
-@keyframes emptyIn{from{opacity:0;transform:translateY(24px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes emptyFx{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:blur(0)}}
-@keyframes emptyUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* Animasi masuk: tiap elemen punya jeda sendiri-sendiri (cascade) + sedikit "lenting" (overshoot) di
+   akhir, biar nggak kaku kayak satu blok geser bareng. Trik biar nggak bentrok sama "drift" (yang jalan
+   terus di orb/rings/spk pakai properti transform): pop/putar masuknya pakai properti scale & rotate
+   yang berdiri sendiri (bukan bagian dari transform), jadi keduanya bisa jalan bareng tanpa saling timpa. */
+#empty.enter{animation:emptyIn .8s cubic-bezier(.22,1,.36,1) both}
+#empty.enter .orb{animation:emptyPopOrb .9s cubic-bezier(.3,1.4,.4,1) both, drift 9s ease-in-out infinite .6s}
+#empty.enter .rings{animation:emptyPop .9s cubic-bezier(.3,1.4,.4,1) .1s both}
+#empty.enter .rings::after{animation:ringPing 1.1s cubic-bezier(.2,.7,.3,1) .35s both}
+#empty.enter .spk.a{animation:emptySpin .7s cubic-bezier(.3,1.5,.4,1) .2s both, drift 6s ease-in-out infinite .6s}
+#empty.enter .spk.b{animation:emptySpin .7s cubic-bezier(.3,1.5,.4,1) .28s both, drift 6s ease-in-out infinite -1.8s}
+#empty.enter .spk.c{animation:emptySpin .7s cubic-bezier(.3,1.5,.4,1) .36s both, drift 6s ease-in-out infinite -3.8s}
+#empty.enter .eyebrow{animation:emptyUp .5s cubic-bezier(.22,1,.36,1) .42s both}
+#empty.enter h1{animation:emptyUp .6s cubic-bezier(.25,1.2,.4,1) .48s both}
+#empty.enter p{animation:emptyUp .55s cubic-bezier(.22,1,.36,1) .58s both}
+@keyframes emptyIn{from{opacity:0}to{opacity:1}}
+@keyframes emptyPop{from{opacity:0;scale:.6;filter:blur(6px)}to{opacity:1;scale:1;filter:blur(0)}}
+@keyframes emptyPopOrb{from{opacity:0;scale:.6;filter:blur(32px)}to{opacity:.55;scale:1;filter:blur(28px)}}
+@keyframes emptySpin{from{opacity:0;scale:.3;rotate:-50deg;filter:blur(3px)}to{opacity:.7;scale:1;rotate:0deg;filter:blur(0)}}
+@keyframes ringPing{from{opacity:.6;scale:.85}to{opacity:0;scale:1.35}}
+@keyframes emptyUp{from{opacity:0;filter:blur(3px);transform:translateY(12px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
 @media (prefers-reduced-motion: reduce){#empty.enter,#empty.enter *{animation:none!important}}
 
 /* footer */
@@ -163,6 +171,7 @@ body.drawer-open #scrim{opacity:1;visibility:visible;transition-delay:0s}
 }
 body.drawer-open #drawer{transform:none;visibility:visible;transition-delay:0s}
 #drawer h2{margin:0 20px 10px;font-size:26px;letter-spacing:.03em}
+#drawer h2 .ver{font-size:12px;font-weight:600;letter-spacing:0;color:var(--muted);vertical-align:middle;margin-left:4px}
 .dscroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 8px}
 .nav{width:100%;display:flex;align-items:center;gap:14px;padding:12px;border:0;background:none;border-radius:14px;color:var(--fg);font-size:17px;text-align:left}
 .nav.cur,.nav:hover{background:var(--bubble)}
