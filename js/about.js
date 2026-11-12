@@ -41,7 +41,9 @@
     { id:'bug', name:'Bug Report', color:'#d6561f', desc:'Nemu error? Lapor dengan cara yang bikin cepat dibereskan.',
       icon:'<rect x="8" y="8" width="8" height="11" rx="4"/><path d="M9 8a3 3 0 0 1 6 0M4 12h4M16 12h4M5 19l3-2M19 19l-3-2M5 6l3 2M19 6l-3 2M12 12v7"/>' },
     { id:'support', name:'Support Developer', color:'#e0382f', desc:'Mau bantu CLARITY AI tetap jalan dan berkembang?',
-      icon:'<path d="M12 20s-7.5-4.6-9.7-9A5.4 5.4 0 0 1 12 6.3 5.4 5.4 0 0 1 21.7 11c-2.2 4.4-9.7 9-9.7 9z"/>' }
+      icon:'<path d="M12 20s-7.5-4.6-9.7-9A5.4 5.4 0 0 1 12 6.3 5.4 5.4 0 0 1 21.7 11c-2.2 4.4-9.7 9-9.7 9z"/>' },
+    { id:'versi', name:'Versi Aplikasi', color:'#5a4fe0', desc:'Versi yang lagi jalan dan apa yang baru.',
+      icon:'<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/>' }
   ];
 
   const linkHtml = (name, url, color, ic, small) =>
@@ -61,8 +63,33 @@
       + `</ul></div><h3 class="sec">Template laporan</h3><div class="card" style="margin-top:0"><pre class="tpl">${esc(BUG_TEMPLATE)}</pre><div class="cmp-cap" style="margin-top:12px"><span>Salin, isi, lalu kirim bersama screenshot.</span><button class="mini" id="tplCopy" type="button">${ICON.copy}Salin template</button></div></div>`
       + `<h3 class="sec">Contact Sento</h3><div class="links">${linkHtml('Telegram', 'https://t.me/Senlith', '#229ed9', 'plane', 't.me/Senlith')}<div class="link-row"><a class="link" href="mailto:${EMAIL}"><i style="background:#d6561f">${ICON.mail}</i><span><b>Gmail</b><small>${EMAIL}</small></span></a><button class="mini ghost" id="mailCopy" type="button" aria-label="Salin alamat Gmail">${ICON.copy}</button></div></div>`,
 
-    support: () => `<div class="card support"><span class="heart">${ICON.heart}</span><h2>Dukung Sento</h2><p>CLARITY AI gratis dipakai siapa saja. Kalau alat ini kepakai dan lu mau bantu biaya server atau pengembangan fitur baru, mampir ke halaman dukungan di bawah.</p><a class="mini" href="${SUPPORT_URL}" target="_blank" rel="noopener noreferrer">${ICON.heart}Support Developer</a></div><div class="links" style="margin-top:16px">${linkHtml('Sociabuzz', SUPPORT_URL, '#e0382f', 'heart', SUPPORT_URL.replace(/^https?:\/\//, ''))}</div>`
+    support: () => `<div class="card support"><span class="heart">${ICON.heart}</span><h2>Dukung Sento</h2><p>CLARITY AI gratis dipakai siapa saja. Kalau alat ini kepakai dan lu mau bantu biaya server atau pengembangan fitur baru, mampir ke halaman dukungan di bawah.</p><a class="mini" href="${SUPPORT_URL}" target="_blank" rel="noopener noreferrer">${ICON.heart}Support Developer</a></div><div class="links" style="margin-top:16px">${linkHtml('Sociabuzz', SUPPORT_URL, '#e0382f', 'heart', SUPPORT_URL.replace(/^https?:\/\//, ''))}</div>`,
+
+    versi: () => `<div class="card txt"><h2>CLARITY AI v${esc(App.VERSION)}</h2><p>Ini versi yang lagi jalan di HP/browser lu sekarang. Kalau nemu versi lebih lama setelah update, coba tutup-buka lagi aplikasinya sekali.</p>`
+      + `<div id="installBox"></div></div>`
+      + `<h3 class="sec">Yang baru</h3>`
+      + App.CHANGELOG.map(c => `<div class="card txt" style="margin-top:0"><b>v${esc(c.v)}</b><small style="display:block;color:var(--muted);margin:2px 0 10px">${esc(c.date)}</small><ul class="checks">${c.items.map(t => `<li>${ICON.check}<span>${esc(t)}</span></li>`).join('')}</ul></div>`).join('')
   };
+
+  function renderInstallBox(){
+    const box = $('#installBox'); if (!box) return;
+    const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    if (standalone) {
+      box.innerHTML = `<div class="cmp-cap" style="margin-top:12px"><span>${ICON.check}Sudah jalan sebagai aplikasi.</span></div>`;
+    } else if (App.canInstall && App.canInstall()) {
+      box.innerHTML = `<button class="mini" id="installBtn" type="button" style="margin-top:12px">${ICON.download}Install sebagai aplikasi</button>`;
+      const b = $('#installBtn');
+      if (b) b.onclick = async () => {
+        b.disabled = true;
+        const outcome = await App.promptInstall();
+        if (outcome === 'accepted') { b.textContent = ''; b.append(ICON.check, 'Terinstall'); }
+        else { b.disabled = false; }
+      };
+    } else {
+      box.innerHTML = `<p class="fine" style="margin-top:12px">Belum bisa di-install di browser ini. Di Chrome/Edge Android biasanya muncul tombol Install setelah beberapa saat; di iPhone pakai Safari → tombol Share → "Add to Home Screen".</p>`;
+    }
+  }
+  document.addEventListener('clarity:installready', renderInstallBox);
 
   const aboutView = $('#aboutView'), aboutHero = $('#aboutHero'), aboutBody = $('#aboutBody');
 
@@ -74,6 +101,7 @@
     const im = aboutView.querySelector('.avatar img'); if (im) im.addEventListener('error', () => im.remove());
     const tc = $('#tplCopy'); if (tc) tc.onclick = e => copyText(BUG_TEMPLATE, e.currentTarget, ICON.check + 'Tersalin');
     const mc = $('#mailCopy'); if (mc) mc.onclick = e => copyText(EMAIL, e.currentTarget, ICON.check);
+    if (item.id === 'versi') renderInstallBox();
   }
 
   App.registerSection({
