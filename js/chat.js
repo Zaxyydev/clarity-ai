@@ -7,7 +7,7 @@
   const { $, esc, store, ICON, md, typer: typerFn, copyText } = App;
   const reduced = App.reduced;
 
-  const PERSONA = 'Kamu adalah CLARITY AI, asisten AI buatan Sento. Sento adalah satu orang developer asal Bali, Indonesia, BUKAN perusahaan, BUKAN dari Swiss, dan bukan nama organisasi. Kalau ada yang bertanya siapa kamu, siapa yang membuatmu, atau siapa Sento, jawab singkat bahwa kamu CLARITY AI, dan pembuatmu adalah Sento, seorang developer individu asal Bali, Indonesia. Jangan pernah menyebut Sento sebagai perusahaan atau mengaitkannya dengan negara Swiss atau negara lain mana pun. Kalau kamu tidak yakin soal detail lain mengenai Sento, jangan mengarang, cukup jawab yang kamu tahu. Jawab dengan bahasa yang dipakai pengguna, jelas dan ringkas.';
+  const PERSONA = 'Kamu adalah CLARITY AI, asisten AI buatan Noir. Noir adalah satu orang developer individu, BUKAN perusahaan. Kalau ada yang bertanya siapa kamu atau siapa yang membuatmu, jawab singkat bahwa kamu CLARITY AI, dan pembuatmu adalah Noir, seorang developer individu. Jangan pernah menyebut lokasi, asal daerah, atau data pribadi Noir; kalau ditanya, jawab bahwa info pribadi pembuat tidak dibagikan. Kalau kamu tidak yakin soal detail lain mengenai Noir, jangan mengarang. Jawab dengan bahasa yang dipakai pengguna, jelas dan ringkas.';
   const chatUrl = q => `${App.BASE_IKYYXD}/ai/publicai?apikey=kyzz&q=${App.enc(PERSONA + '\n\nPesan pengguna: ' + q)}`;
 
   /* ===== Multi-AI: daftar model yang bisa dipilih, mirip pemilih model di Claude/ChatGPT. ===== */
@@ -26,7 +26,7 @@
   }
 
   const MODELS = [
-    { id:'beta1', name:'Clarity Beta 1.0', desc:'Model utama CLARITY AI, dibuat Sento. Pilihan default.',
+    { id:'beta1', name:'Clarity Beta 1.0', desc:'Model utama CLARITY AI, dibuat Noir. Pilihan default.',
       run: async (q, id, signal) => {
         const res = await App.apiFetch(chatUrl(q), { signal });
         checkStatus(res);
@@ -70,41 +70,6 @@
   const MODEL_BY_ID = {}; MODELS.forEach(m => MODEL_BY_ID[m.id] = m);
   const defaultModelId = () => store.get('clarity.lastModel', 'beta1');
 
-  // Model tambahan diambil otomatis dari /api/v3/models (daftar model yang dipakai endpoint
-  // chatai), biar nggak perlu nebak-nebak nama model yang tersedia di sana satu-satu.
-  function prettyModelName(s){
-    return String(s).replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim() || 'Lainnya';
-  }
-  let dynModelsLoaded = false;
-  async function loadDynamicModels(){
-    try {
-      const res = await zyGet('/api/v3/models', {}, undefined);
-      if (!res.data || res.data.status === false) return;
-      let list = res.data;
-      if (list && !Array.isArray(list)) list = list.models || list.result || list.data || list.list || [];
-      if (!Array.isArray(list)) return;
-      list.forEach(m => {
-        const id = typeof m === 'string' ? m : (m && (m.id || m.model || m.name) || '');
-        if (!id || MODEL_BY_ID['dyn:' + id]) return;
-        const label = (typeof m === 'object' && (m.name || m.label)) || id;
-        const entry = {
-          id: 'dyn:' + id,
-          name: 'Clarity ' + prettyModelName(label),
-          desc: 'Model tambahan dari daftar model yang tersedia di server.',
-          run: async (q, cid, signal) => {
-            const r = await zyPost('/api/ai/chatai', { teks:q, model:id, session:cid, stream:'false' }, signal);
-            checkStatus(r);
-            const t = pickText(r.data).trim();
-            if (!t) throw new Error('Server membalas tanpa isi.');
-            return t;
-          }
-        };
-        MODELS.push(entry); MODEL_BY_ID[entry.id] = entry;
-      });
-      dynModelsLoaded = true;
-    } catch(e){ /* diam-diam: daftar model statis di atas tetap jalan kalau ini gagal */ }
-  }
-
   let chats = store.get('clarity.chats', {});
   let chat = null;
   Object.values(chats).forEach(c => c.msgs.forEach(m => { if (m.pending){ m.pending = false; m.err = 'Koneksi terputus sebelum jawaban datang.'; } }));
@@ -121,7 +86,7 @@
     thread.innerHTML = chat.msgs.map((m, i) => {
       if (m.role === 'user') return `<div class="msg user"><div class="bubble">${esc(m.text)}</div></div>`;
       if (m.pending) return `<div class="msg ai"><div class="think"><span class="dot"></span><span class="shimmer">Berpikir…</span></div></div>`;
-      if (m.err) return `<div class="msg ai"><div class="err">${esc(m.err)}</div><div class="acts"><button type="button" data-act="retry">${ICON.retry}Coba lagi</button></div></div>`;
+      if (m.err) return `<div class="msg ai"><div class="err">${esc(m.err)}</div><div class="acts"><button type="button" data-act="retry">${ICON.retry}Coba lagi</button><button type="button" data-act="model">Ganti model AI</button></div></div>`;
       return `<div class="msg ai" data-i="${i}"><div class="ai-body">${m.reveal ? '' : md(m.text)}</div><div class="acts"><button type="button" data-act="copy" aria-label="Salin jawaban">${ICON.copy}</button>${i === last ? `<button type="button" data-act="retry" aria-label="Buat ulang jawaban">${ICON.retry}</button>` : ''}</div></div>`;
     }).join('');
     const empty = chat.msgs.length === 0;
@@ -159,6 +124,17 @@
     tick();
   }
 
+  const FAIL_MSG = 'Pertanyaan gagal diproses. Coba lagi, muat ulang halaman, atau ganti model AI lewat menu di bagian atas.';
+  // Jawaban yang jelas rusak (kosong, HTML error, pesan teknis API) dianggap gagal, bukan ditampilkan sebagai jawaban.
+  function looksBroken(t){
+    t = (t || '').trim();
+    if (t.length < 2) return true;
+    if (/^(undefined|null|nan|\[object object\]|\{\s*\})$/i.test(t)) return true;
+    if (/^<(!doctype|html|head|body)/i.test(t)) return true;
+    if (t.length < 400 && /(api\s?key|apikey|rate.?limit|too many requests|internal server error|bad gateway|service unavailable|gateway time-?out|cloudflare|unauthorized|forbidden|not found|quota|stack trace|traceback)/i.test(t)) return true;
+    return false;
+  }
+
   function pickText(d){
     if (typeof d === 'string') return d;
     for (const v of [d.result, d.response, d.answer, d.message, d.text, d.output, d.reply, d.content, d.data]){
@@ -179,11 +155,12 @@
     updateSend();
     try {
       const t = await model.run(q, c.id, ctrl.signal);
+      if (looksBroken(t)) throw new Error(FAIL_MSG);
       m.text = t; m.reveal = true;
     } catch(e){
-      if (e.name === 'AbortError') m.err = why === 'stop' ? 'Dihentikan.' : 'Terlalu lama menunggu jawaban. Coba lagi.';
-      else if (e instanceof TypeError) m.err = 'Tidak bisa terhubung ke API. Cek koneksi internet. Kalau koneksi aman, API mungkin memblokir akses dari browser (CORS).';
-      else m.err = e.message;
+      if (e.name === 'AbortError') m.err = why === 'stop' ? 'Dihentikan.' : 'Terlalu lama menunggu jawaban. Coba lagi atau ganti model AI lewat menu di bagian atas.';
+      else if (e instanceof TypeError) m.err = 'Tidak bisa terhubung ke server AI. Cek koneksi internet, muat ulang halaman, atau ganti model AI lewat menu di bagian atas.';
+      else m.err = (e.message && e.message !== FAIL_MSG) ? e.message + ' Kalau terus gagal, muat ulang halaman atau ganti model AI.' : FAIL_MSG;
     } finally {
       clearTimeout(timer);
       m.pending = false; c.busy = false; c.stop = null;
@@ -235,6 +212,7 @@
     const b = e.target.closest('[data-act]'); if (!b) return;
     const act = b.dataset.act;
     if (act === 'retry') retry();
+    else if (act === 'model'){ e.stopPropagation(); openModelMenu(); }
     else if (act === 'copy'){ const m = chat.msgs[+b.closest('.msg').dataset.i]; if (m) copyText(m.text, b, ICON.check); }
     else if (act === 'copycode'){ copyText(b.closest('.code').querySelector('code').textContent, b, 'Tersalin'); }
   });
@@ -307,6 +285,4 @@
     input.value = '';
     autosize();
   };
-
-  loadDynamicModels();
 })();

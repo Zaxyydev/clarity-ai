@@ -9,20 +9,8 @@
   /* ========== Konfigurasi dasar ========== */
   App.BASE_IKYYXD = 'https://api.ikyyxd.my.id';
   App.BASE_ZYVOR = 'https://api.zyvor.my.id';
+  App.BASE_RIZZ = 'https://api.rizzpedia.ai.id';
   const enc = App.enc = encodeURIComponent;
-
-  /* ========== Versi aplikasi ========== */
-  App.VERSION = '2.0.0';
-  App.CHANGELOG = [
-    { v:'2.0.0', date:'November 2026', items:[
-      'CLARITY AI sekarang bisa di-install jadi aplikasi (Add to Home Screen) dan buka tanpa browser.',
-      'Kategori baru "Maker": generator kartu profil, meme, dan kartu ucapan dari foto/teks.',
-      'Fitur Movie/Film & Drama dihapus (berat, lag, dan penuh iklan).',
-      'Daftar model AI di chat sekarang ikut update otomatis dari server.',
-      'Animasi layar awal chat dibikin lebih halus.',
-      'Pengingat join channel WhatsApp buat info update, muncul sekali di kunjungan pertama.'
-    ] }
-  ];
 
   /* ========== Util kecil ========== */
   const $ = App.$ = s => document.querySelector(s);
@@ -61,8 +49,7 @@
     cam: svg('<path d="M4 8h3l1.6-2.2A2 2 0 0 1 10.2 5h3.6a2 2 0 0 1 1.6.8L17 8h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/><circle cx="12" cy="13.5" r="3.6"/>'),
     play: svg('<path d="M7 4.5l13 7.5-13 7.5z" style="fill:currentColor"/>'),
     back: svg('<path d="M15 19l-7-7 7-7"/>'),
-    expand: svg('<path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M4 15v4a1 1 0 0 0 1 1h4"/>'),
-    close: svg('<path d="M6 6l12 12M18 6L6 18"/>')
+    expand: svg('<path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M4 15v4a1 1 0 0 0 1 1h4"/>')
   };
   App.fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
@@ -242,7 +229,7 @@
   // Bangun & jalankan request GET (query string) atau POST JSON, dari semua field value.
   // api.zyvor.my.id menolak dipanggil langsung dari browser (CORS), jadi request ke base itu
   // dibelokkan lewat /api/zyvor?path=... (fungsi server di Vercel, nggak kena CORS).
-  App.proxyFor = function proxyFor(base){ return base === App.BASE_ZYVOR ? '/api/zyvor' : ''; };
+  App.proxyFor = function proxyFor(base){ return base === App.BASE_ZYVOR ? '/api/zyvor' : base === App.BASE_RIZZ ? '/api/rizz' : ''; };
 
   App.makeRun = function makeRun(opts){
     // opts: {method:'GET'|'POST', base, path, extra?:{}}
@@ -340,6 +327,197 @@
     return rows;
   };
 
+  // Cari daftar objek "mirip film" di dalam hasil JSON yang bentuknya nggak pasti.
+  function findMovieList(d, depth){
+    depth = depth || 0; if (depth > 5) return null;
+    if (Array.isArray(d)){
+      const objs = d.filter(x => x && typeof x === 'object' && !Array.isArray(x));
+      if (objs.length && objs.length >= d.length * 0.6) return objs;
+      return null;
+    }
+    if (d && typeof d === 'object'){
+      for (const k of ['results','result','list','items','data','movies','dramas','episodes','hasil','records']){
+        if (k in d){ const r = findMovieList(d[k], depth + 1); if (r) return r; }
+      }
+      for (const v of Object.values(d)){ const r = findMovieList(v, depth + 1); if (r) return r; }
+    }
+    return null;
+  }
+  function pickField(o, keys){
+    if (!o || typeof o !== 'object') return '';
+    for (const k of keys){ if (o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k]; }
+    const lower = {}; for (const kk in o) lower[kk.toLowerCase()] = o[kk];
+    for (const k of keys){ const v = lower[k.toLowerCase()]; if (v !== undefined && v !== null && v !== '') return v; }
+    return '';
+  }
+  function movieTitle(o){ const v = pickField(o, ['title','name','judul','original_title','label']); return v ? String(v) : 'Tanpa judul'; }
+  // Kalau bukan daftar (array), coba cari objek detail asli di dalam pembungkus umum (result/data/dst)
+  // sebelum nyerah dan makai objek mentah apa adanya.
+  function findMovieDetail(d, depth){
+    depth = depth || 0; if (depth > 5 || !d || typeof d !== 'object' || Array.isArray(d)) return null;
+    if (pickField(d, ['title','name','judul'])) return d;
+    for (const k of ['result','data','movie','item','detail','info']){
+      if (k in d){ const r = findMovieDetail(d[k], depth + 1); if (r) return r; }
+    }
+    return null;
+  }
+  // Identifier Internet Archive (dipakai freemovie): selalu punya thumbnail & embed player baku, jadi
+  // nggak perlu nebak bentuk balasan API buat film dari sana.
+  function archiveIdentifier(o){
+    const v = pickField(o, ['identifier','identifier_name','archive_id']);
+    return typeof v === 'string' && v ? v : '';
+  }
+  function moviePoster(o){
+    let v = pickField(o, ['poster','image','img','thumb','thumbnail','cover','poster_url','picture','photo','banner']);
+    if (v && typeof v === 'object') v = pickField(v, ['url','src','link']);
+    if (typeof v === 'string' && /^https?:\/\//.test(v)) return v;
+    const id = archiveIdentifier(o);
+    return id ? 'https://archive.org/services/img/' + encodeURIComponent(id) : '';
+  }
+  function movieDesc(o){
+    const v = pickField(o, ['desc','description','synopsis','overview','subtitle','summary']);
+    return typeof v === 'string' ? v : '';
+  }
+  function movieGenre(o){
+    let v = pickField(o, ['genre','category','subject','type','tags']);
+    if (Array.isArray(v)) v = v[0];
+    return (typeof v === 'string' && v) ? v : '';
+  }
+  // Link download langsung archive.org (https://archive.org/download/<identifier>/<file>) kalau
+  // nama filenya ketemu — ini lebih bisa diandalkan daripada embed player umum yang kadang nge-blank.
+  function archiveFileUrl(o, archId){
+    if (!archId) return '';
+    let f = pickField(o, ['file','filename','video_file']);
+    if (f && typeof f === 'object') f = pickField(f, ['name','file']);
+    if (typeof f === 'string' && f) return 'https://archive.org/download/' + encodeURIComponent(archId) + '/' + encodeURIComponent(f);
+    const files = Array.isArray(o && o.files) ? o.files : null;
+    if (files){
+      const hit = files.find(x => x && typeof x === 'object' && /\.(mp4|m4v|webm|ogv)$/i.test(String(x.name || x.file || '')));
+      if (hit) return 'https://archive.org/download/' + encodeURIComponent(archId) + '/' + encodeURIComponent(hit.name || hit.file);
+    }
+    return '';
+  }
+
+  // Tampilan ala Netflix: grid poster → ketuk buka halaman detail dengan tombol Play.
+  function renderMovie(container, data){
+    const list = findMovieList(data);
+    const detail = !list && findMovieDetail(data);
+    const items = list || (detail ? [detail] : (data && typeof data === 'object' && !Array.isArray(data) ? [data] : []));
+    if (!items.length){
+      const links = App.findLinks(data);
+      container.innerHTML = `<p class="cmp-warn">Data film tidak ditemukan atau bentuk balasannya nggak dikenali.</p>` +
+        (links.length ? `<div class="dllist">${links.map(l => `<div class="dlrow"><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer">${ICON.open}Buka</a></div>`).join('')}</div>` : '');
+      return;
+    }
+    function cardHtml(it, i){
+      const p = moviePoster(it), t = movieTitle(it);
+      return `<button type="button" class="mv-card" data-i="${i}">` +
+        (p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : `<span class="mv-ph">${ICON.film}</span>`) +
+        `<span class="mv-t">${esc(t)}</span></button>`;
+    }
+    function showGrid(){
+      // Kelompokkan jadi baris per genre/kategori kalau datanya ada field genre — semua film tetap
+      // ditampilkan (nggak dipotong), cuma disusun ke bawah ala Netflix dengan animasi masuk.
+      const groups = []; const byGenre = {};
+      items.forEach((it, i) => {
+        const g = movieGenre(it) || '';
+        if (!byGenre[g]){ byGenre[g] = { name: g, idx: [] }; groups.push(byGenre[g]); }
+        byGenre[g].idx.push(i);
+      });
+      const multiRow = groups.length > 1;
+      container.innerHTML = groups.map((g, gi) => `
+        <div class="mv-row" style="animation-delay:${Math.min(gi, 8) * 70}ms">
+          ${multiRow ? `<h3 class="mv-rowtitle">${esc(g.name || 'Lainnya')}</h3>` : ''}
+          <div class="mv-grid">${g.idx.map(i => cardHtml(items[i], i)).join('')}</div>
+        </div>`).join('');
+      container.querySelectorAll('.mv-card').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
+    }
+    function episodesOf(o){
+      if (!o || typeof o !== 'object') return null;
+      for (const k of ['episodes','episode_list','episodeList','chapters','eps']){
+        if (Array.isArray(o[k]) && o[k].length) return o[k];
+      }
+      return null;
+    }
+    function isKnownEmbed(url){
+      return /archive\.org\/embed\//i.test(url) || /youtube\.com\/embed\//i.test(url) || /player\.vimeo\.com/i.test(url);
+    }
+    function playInfo(o){
+      const v = findUrl(o);
+      const archId = archiveIdentifier(o);
+      const archFile = (!v && archId) ? archiveFileUrl(o, archId) : '';
+      const embed = (!v && !archFile && archId) ? 'https://archive.org/embed/' + encodeURIComponent(archId) : '';
+      const url = v || archFile || embed;
+      const direct = !!(v || archFile) && /\.(mp4|m4v|m3u8|webm|mov|ogv)(\?|$)/i.test(v || archFile);
+      // Cuma file video langsung atau embed yang sudah dikenal aman yang diputar di dalam halaman.
+      // Link halaman situs biasa (misalnya link ke melolo.com) dibuka di tab baru, soalnya kalau
+      // dipaksa nge-iframe, kebanyakan situs nolak (muncul "menolak untuk tersambung").
+      const embeddable = direct || isKnownEmbed(url);
+      return { url, direct, embeddable };
+    }
+    function showHero(it){
+      const p = moviePoster(it), t = movieTitle(it), d = movieDesc(it);
+      const pl = playInfo(it);
+      const episodes = episodesOf(it);
+      const recIdx = items.length > 1 ? items.map((x, i) => i).filter(i => items[i] !== it) : [];
+      container.innerHTML = `<div class="mv-hero">
+        <div class="mv-stage" id="mvStage">
+          ${p ? `<img src="${esc(p)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+          <div class="mv-grad"></div>
+          ${items.length > 1 ? `<button type="button" class="mv-back">${ICON.back}</button>` : ''}
+          ${pl.url
+            ? `<button type="button" class="mv-playbtn" aria-label="Play">${ICON.play}</button>`
+            : `<div class="mv-noplay">${ICON.film}<span>Link nonton belum ketemu</span></div>`}
+        </div>
+        <div class="mv-info"><h2>${esc(t)}</h2>${d ? `<p>${esc(d)}</p>` : ''}
+          ${!pl.url ? `<p class="cmp-warn" style="margin:10px 0 0">Server tidak mengirim link yang bisa dikenali buat film ini. Coba film lain, atau mungkin perlu action lain di API-nya.</p>` : ''}
+        </div>
+        ${episodes ? `<div class="mv-sec"><h3>Episode</h3><div class="mv-eprow">${episodes.map((e, i) =>
+            `<button type="button" class="mv-ep" data-i="${i}">${esc(pickField(e, ['episode','ep','name','title']) || ('Eps ' + (i + 1)))}</button>`
+          ).join('')}</div></div>` : ''}
+        ${recIdx.length ? `<div class="mv-sec"><h3>Rekomendasi</h3><div class="mv-grid mv-grid-sm">${recIdx.map(i => {
+            const ri = items[i], rp = moviePoster(ri), rt = movieTitle(ri);
+            return `<button type="button" class="mv-card mv-rec" data-i="${i}">` +
+              (rp ? `<img src="${esc(rp)}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">` : `<span class="mv-ph">${ICON.film}</span>`) +
+              `<span class="mv-t">${esc(rt)}</span></button>`;
+          }).join('')}</div></div>` : ''}
+      </div>`;
+      const stage = container.querySelector('#mvStage');
+      function playNow(url, direct){
+        stage.innerHTML = (direct
+          ? `<video controls autoplay playsinline referrerpolicy="no-referrer" src="${esc(url)}"></video>`
+          : `<iframe src="${esc(url)}" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>`)
+          + `<button type="button" class="mv-fs" aria-label="Perbesar">${ICON.expand}</button>`;
+        const fs = stage.querySelector('.mv-fs');
+        fs.addEventListener('click', () => {
+          const el = stage.querySelector('video,iframe');
+          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+          else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
+        });
+      }
+      const back = container.querySelector('.mv-back'); if (back) back.addEventListener('click', showGrid);
+      const pb = container.querySelector('.mv-playbtn'); if (pb) pb.addEventListener('click', () => {
+        if (pl.embeddable) playNow(pl.url, pl.direct);
+        else window.open(pl.url, '_blank', 'noopener,noreferrer');
+      });
+      container.querySelectorAll('.mv-ep').forEach(b => b.addEventListener('click', () => {
+        const epIt = episodes[+b.dataset.i];
+        const epl = playInfo(epIt);
+        container.querySelectorAll('.mv-ep').forEach(x => x.classList.remove('on')); b.classList.add('on');
+        if (epl.url && epl.embeddable) playNow(epl.url, epl.direct);
+        else if (epl.url) window.open(epl.url, '_blank', 'noopener,noreferrer');
+        else { b.insertAdjacentHTML('afterend', `<span class="mv-eperr">Link episode ini belum ketemu.</span>`); setTimeout(() => { const w = container.querySelector('.mv-eperr'); if (w) w.remove(); }, 2500); }
+      }));
+      container.querySelectorAll('.mv-rec').forEach(b => b.addEventListener('click', () => showHero(items[+b.dataset.i])));
+      if (!pl.url){
+        const links = App.findLinks(it);
+        if (links.length) container.querySelector('.mv-info').insertAdjacentHTML('beforeend',
+          `<div class="dllist">${links.map(l => `<div class="dlrow"><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer">${ICON.open}Buka</a></div>`).join('')}</div>`);
+      }
+    }
+    if (items.length === 1) showHero(items[0]); else showGrid();
+  }
+
   /* ========== Extract default hasil berdasar item.kind ========== */
   App.defaultExtract = function defaultExtract(apiRes, item, vals, previews){
     if (apiRes.data && apiRes.data.status === false){
@@ -383,6 +561,10 @@
         const links = App.findLinks(apiRes.data, inputUrl);
         if (!links.length) throw new Error('Server tidak mengirim link hasil.');
         return { links };
+      }
+      case 'movie': {
+        if (!apiRes.data) throw new Error('Server tidak mengirim data.');
+        return { data: apiRes.data };
       }
       default: return {};
     }
@@ -437,6 +619,10 @@
       container.innerHTML = `<div class="kv">${payload.rows.map(r => `<div class="r"><b>${esc(r.label)}</b><span>${esc(r.value)}</span></div>`).join('')}</div>`;
       return;
     }
+    if (kind === 'movie'){
+      renderMovie(container, payload.data);
+      return;
+    }
     if (kind === 'links'){
       const typeIcon = url => /\.(mp3|m4a|wav|ogg)(\?|$)/i.test(url) ? ICON.music
         : /\.(mp4|mov|webm|mkv|m3u8)(\?|$)/i.test(url) ? ICON.film
@@ -445,7 +631,7 @@
         : ICON.link2;
       const isImg = url => /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
       container.innerHTML = `<div class="dllist">${payload.links.map((l, i) =>
-        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Download</a></div>`
+        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Buka</a></div>`
       ).join('')}</div><p class="fine">Sebagian platform tidak mengizinkan unduh otomatis lewat browser — kalau tombol cuma membuka file di tab baru, tahan gambar/video lalu pilih simpan.</p>`;
       return;
     }
@@ -692,7 +878,7 @@
     const hash = location.hash.slice(1);
     if (hash === 'tools' || hash === 'upscale'){ history.replaceState(null, '', '#t-upscale'); return App.route(); }
     const found = findItem(hash);
-    document.body.classList.remove('view-tool', 'view-about');
+    document.body.classList.remove('view-tool', 'view-about', 'view-movie');
     if (found) document.body.classList.add(found.sec.viewClass || 'view-tool');
     App.closeDrawer();
     if (found){
@@ -715,43 +901,7 @@
   };
 
   /* ========== Boot ========== */
-  const CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8QkZK4o7qPqvW1s90q';
-  function showChannelPrompt(){
-    try { if (store.get('clarity.channelSeen', false)) return; } catch(e){}
-    const el = document.createElement('div');
-    el.className = 'chprompt';
-    el.innerHTML = `<div class="chprompt-card">
-      <i>${svg('<path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/>', ' style="fill:currentColor"')}</i>
-      <div class="chprompt-txt"><b>Jangan ketinggalan update</b><span>Join channel WhatsApp CLARITY AI buat info fitur baru & pengumuman.</span></div>
-      <a class="chprompt-join" href="${CHANNEL_URL}" target="_blank" rel="noopener noreferrer">Join</a>
-      <button type="button" class="chprompt-x" aria-label="Tutup">${ICON.close}</button>
-    </div>`;
-    document.body.appendChild(el);
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-    const dismiss = () => { try { store.set('clarity.channelSeen', true); } catch(e){} el.classList.remove('show'); setTimeout(() => el.remove(), 320); };
-    el.querySelector('.chprompt-x').addEventListener('click', dismiss);
-    el.querySelector('.chprompt-join').addEventListener('click', dismiss);
-  }
-
-  /* ========== Install sebagai aplikasi (PWA) ========== */
-  let deferredInstall = null;
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredInstall = e;
-    document.dispatchEvent(new CustomEvent('clarity:installready'));
-  });
-  window.addEventListener('appinstalled', () => { deferredInstall = null; });
-  App.canInstall = () => !!deferredInstall;
-  App.promptInstall = async () => {
-    if (!deferredInstall) return 'unavailable';
-    deferredInstall.prompt();
-    const { outcome } = await deferredInstall.userChoice;
-    deferredInstall = null;
-    return outcome; // 'accepted' | 'dismissed'
-  };
-
   App.boot = function boot(){
-    const verEl = $('#appVersion'); if (verEl) verEl.textContent = 'v' + App.VERSION;
     App.toolEl = {
       view: $('#toolView'), hero: $('#toolHero'), form: $('#toolForm'), fields: $('#toolFields'),
       status: $('#toolStatus'), out: $('#toolOut'), steps: $('#toolSteps'), fine: $('#toolFine'), goBtn: $('#goBtn')
@@ -762,6 +912,5 @@
     $('#scrim').addEventListener('click', App.closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') App.closeDrawer(); });
     App.route();
-    if (!reduced) setTimeout(showChannelPrompt, 900); else showChannelPrompt();
   };
 })();
