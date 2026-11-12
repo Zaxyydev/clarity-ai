@@ -5,17 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fafafa">
 <title>CLARITY AI</title>
-<meta name="description" content="Ngobrol dengan AI dan olah gambar/video langsung dari HP.">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-512.png" type="image/png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CLARITY AI">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=20261112a">
 </head>
 <body>
 <div id="app">
@@ -43,7 +36,6 @@
       <svg class="spk a" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
       <svg class="spk b" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
       <svg class="spk c" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
-      <span class="eyebrow">C.AI</span>
       <h1>CLARITY <b>AI</b></h1>
       <p>Tanya apa saja, jawabannya jernih.</p>
     </div>
@@ -67,6 +59,18 @@
     <div id="aboutBody"></div>
   </section>
 
+  <section id="movieView" aria-label="Film & Drama">
+    <div class="mv-top">
+      <i id="movieIcon"></i>
+      <h1 id="movieTitle"></h1>
+    </div>
+    <form class="mv-search" id="movieSearchForm">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="movieSearchInput" type="search" inputmode="search" placeholder="Cari judul film atau drama…" autocomplete="off">
+      <button type="submit">Cari</button>
+    </form>
+    <div id="movieBody"></div>
+  </section>
 
   <footer>
     <div id="starters">
@@ -91,7 +95,7 @@
 <div id="scrim"></div>
 
 <aside id="drawer" aria-label="Menu">
-  <h2>CLARITY AI <small id="appVersion" class="ver"></small></h2>
+  <h2>CLARITY AI</h2>
   <div class="dscroll">
     <div id="navList"></div>
     <div class="label">Obrolan</div>
@@ -102,20 +106,13 @@
   </button>
 </aside>
 
-<script src="js/core.js"></script>
-<script src="js/chat.js"></script>
-<script src="js/tools.js"></script>
-<script src="js/toolsmenu.js"></script>
-<script src="js/maker.js"></script>
-<script src="js/downloader.js"></script>
-<script src="js/about.js"></script>
-<script>
-App.boot();
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-</script>
+<script src="js/core.js?v=20261112a"></script>
+<script src="js/chat.js?v=20261112a"></script>
+<script src="js/tools.js?v=20261112a"></script>
+<script src="js/movie.js?v=20261112a"></script>
+<script src="js/toolsmenu.js?v=20261112a"></script>
+<script src="js/downloader.js?v=20261112a"></script>
+<script src="js/about.js?v=20261112a"></script>
+<script>App.boot();</script>
 </body>
 </html>
