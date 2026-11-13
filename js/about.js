@@ -45,31 +45,38 @@
   ];
 
   const THANKS = [
-    { name:'noir', role:'Developer' },
-    { name:'Sang Hyang Widhi', role:'My God' },
-    { name:'My Parents', role:'Support' },
-    { name:'Skyzo', role:'Teacher' },
-    { name:'Rizz', role:'Sumber API' },
-    { name:'Zyor', role:'Sumber API' },
-    { name:'Ikky', role:'Sumber API' },
-    { name:'Depa', role:'Friend' },
-    { name:'Bibin', role:'Friend' },
-    { name:'Tugus / Ell', role:'Friend' },
-    { name:'Fadel', role:'Friend' },
-    { name:'Manzzy', role:'Friend' },
-    { name:'Pou', role:'Friend' },
-    { name:'Asy', role:'Friend' },
-    { name:'Kyo', role:'Wibu' },
-    { name:'Dan lainnya', role:'Terima kasih semuanya' }
+    { title:'Di balik layar', color:'#6b5ce7', people:[
+      { n:'Noir', r:'Yang bikin dan merawat CLARITY AI dari nol.' }] },
+    { title:'Doa & dukungan', color:'#e0382f', people:[
+      { n:'Sang Hyang Widhi', r:'Tempat bersyukur dan berserah di setiap langkah.' },
+      { n:'My Parents', r:'Doa dan dukungan yang nggak pernah putus.' }] },
+    { title:'Guru', color:'#0b9c84', people:[
+      { n:'Skyzo', r:'Guru yang ngajarin dan ngebimbing dari awal.' }] },
+    { title:'Sumber API', color:'#2f6fe0', people:[
+      { n:'Rizz', r:'Sumber API downloader, stalk, dan image creator.' },
+      { n:'Zyor', r:'Sumber API alat gambar dan downloader.' },
+      { n:'Ikky', r:'Sumber API alat gambar dan video.' }] },
+    { title:'Teman seperjuangan', color:'#d6561f', people:[
+      { n:'Depa', r:'Teman yang selalu ada.' },
+      { n:'Bibin', r:'Teman nongkrong dan tukar pikiran.' },
+      { n:'Tugus / Ell', r:'Teman yang ikut nyemangatin.' },
+      { n:'Fadel', r:'Teman yang ikut ngetes dan kasih masukan.' },
+      { n:'Manzzy', r:'Teman yang bikin suasana rame.' },
+      { n:'Pou', r:'Teman yang selalu support.' },
+      { n:'Asy', r:'Teman yang nemenin dari awal.' }] },
+    { title:'Wibu corner', color:'#d82f8f', people:[
+      { n:'Kyo', r:'Wibu sejati, sumber rekomendasi anime.' }] }
   ];
-  const thanksHtml = () => `<h3 class="sec">Thanks to</h3><div class="card thx">${THANKS.map(t =>
-    `<div class="thx-row"><b>${esc(t.name)}</b><span>${esc(t.role)}</span></div>`).join('')}</div>`;
+  const thanksHtml = () => `<div class="thx-head"><h3>Thanks to</h3><p>Proyek ini nggak jalan sendirian. Makasih buat semua yang ikut bantu, kasih semangat, dan nyediain API.</p></div><div class="thx">${THANKS.map(g =>
+    `<div class="thx-g" style="--c:${g.color}"><div class="thx-t"><span></span>${esc(g.title)}</div>${g.people.map(p =>
+      `<div class="thx-p"><i>${esc(p.n.charAt(0).toUpperCase())}</i><div><b>${esc(p.n)}</b><small>${esc(p.r)}</small></div></div>`).join('')}</div>`
+  ).join('')}<p class="thx-more">Dan semua yang belum sempat tertulis di sini. Terima kasih banyak.</p></div>`;
 
   const linkHtml = (name, url, color, ic, small) =>
     `<a class="link" href="${url}" target="_blank" rel="noopener noreferrer"><i style="background:${color}">${ICON[ic]}</i><span><b>${esc(name)}</b><small>${esc(small)}</small></span>${ICON.arrow}</a>`;
 
   const BODY = {
-    owner: () => `<div class="card profile"><div class="avatar"><span class="ini">N</span><img src="sento.jpg" alt="Foto Noir"></div><h2>Noir</h2><span class="badge">Developer</span><p>Halo, gue Noir, satu orang developer individu (bukan perusahaan). Gue bikin CLARITY AI supaya ngobrol dengan AI dan mengolah gambar atau video bisa dilakukan di satu tempat, langsung dari HP tanpa instal aplikasi.</p><div class="chips2"><span>Developer individu</span><span>Pembuat CLARITY AI</span></div></div>${thanksHtml()}`,
+    owner: () => `<div class="own"><div class="own-cover"></div><div class="avatar own-av"><span class="ini">N</span><img src="sento.jpg" alt="Foto Noir"></div><h2>Noir</h2><span class="badge">Developer</span><p class="own-bio">Halo, gue Noir, developer individu di balik CLARITY AI. Semua ini gue bangun sendiri, satu per satu, dari nol.</p><p class="own-bio">Idenya sederhana: ngobrol sama AI, edit gambar, unduh video, sampai cek info akun publik, semua ada di satu tempat dan langsung jalan dari HP tanpa instal aplikasi.</p><div class="own-grid"><div><b>Satu tempat</b><span>Chat AI, alat gambar, downloader, dan stalk akun.</span></div><div><b>Tanpa instal</b><span>Buka lewat browser, langsung pakai.</span></div><div><b>Terus berkembang</b><span>Fitur baru ditambah dan bug diperbaiki rutin.</span></div></div></div>${thanksHtml()}`,
 
     tujuan: () => `<div class="card txt"><h2>Satu tempat untuk AI dan olah gambar</h2><p>CLARITY AI dibuat supaya siapa saja bisa ngobrol dengan asisten AI dan mengolah gambar, video, atau file lain langsung dari HP, tanpa instal aplikasi dan tanpa ribet.</p><p>Isinya obrolan AI, puluhan alat olah gambar/video, Tools serbaguna, dan Download dari berbagai platform.</p></div><h3 class="sec">Channel Update Informasi</h3><div class="links">${LINKS.map(l => linkHtml(l.name, l.url, l.color, l.ic, l.url.replace(/^https?:\/\//, ''))).join('')}</div><p class="fine">Ikuti channel untuk kabar fitur baru dan perbaikan.</p>`,
 

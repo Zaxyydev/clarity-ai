@@ -151,31 +151,6 @@
         { key:'name', type:'text', label:'Nama pengirim', placeholder:'Nama' }
       ], method:'GET', base:RZ, path:'/api/imagecreator/qc', goLabel:'Buat gambar' },
 
-    { id:'stalkff', name:'Cek akun Free Fire', color:'#e0782f', kind:'kv',
-      desc:'Lihat info publik sebuah akun Free Fire dari ID-nya.', icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-      fields:[{ key:'id', type:'text', label:'ID Free Fire', placeholder:'123456789' }],
-      method:'GET', base:RZ, path:'/api/stalk/ffv2', goLabel:'Cek akun' },
-
-    { id:'stalkgh', name:'Cek akun GitHub', color:'#2b2f36', kind:'kv',
-      desc:'Lihat profil publik sebuah akun GitHub.', icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-      fields:[{ key:'username', type:'text', label:'Username GitHub', placeholder:'torvalds' }],
-      method:'GET', base:RZ, path:'/api/stalk/github', goLabel:'Cek akun' },
-
-    { id:'stalkig', name:'Cek akun Instagram', color:'#d82f8f', kind:'kv',
-      desc:'Lihat profil publik sebuah akun Instagram.', icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-      fields:[{ key:'username', type:'text', label:'Username Instagram', placeholder:'username' }],
-      method:'GET', base:RZ, path:'/api/stalk/instagram', goLabel:'Cek akun' },
-
-    { id:'stalktt', name:'Cek akun TikTok', color:'#161618', kind:'kv',
-      desc:'Lihat profil publik sebuah akun TikTok.', icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-      fields:[{ key:'username', type:'text', label:'Username TikTok', placeholder:'username' }],
-      method:'GET', base:RZ, path:'/api/stalk/tiktok', goLabel:'Cek akun' },
-
-    { id:'stalkyt', name:'Cek channel YouTube', color:'#e02f2f', kind:'kv',
-      desc:'Lihat info publik sebuah channel YouTube.', icon:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-      fields:[{ key:'username', type:'text', label:'Username / nama channel', placeholder:'@namachannel' }],
-      method:'GET', base:RZ, path:'/api/stalk/youtube', goLabel:'Cek channel' },
-
     { id:'shortbitly', name:'Shortlink Bitly', color:'#ee6123', kind:'links',
       desc:'Perpendek link pakai Bitly.', icon:'<path d="M9 15l6-6M9.5 5.5L11 4a3.8 3.8 0 0 1 5.4 5.4l-1.9 1.9M14.5 18.5L13 20a3.8 3.8 0 0 1-5.4-5.4l1.9-1.9"/>',
       fields:[{ key:'link', type:'text', label:'Link panjang', placeholder:'https://…' }],

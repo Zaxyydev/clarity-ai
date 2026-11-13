@@ -375,12 +375,52 @@
     }
   };
 
+  /* ========== Simpan file (tombol Download) ========== */
+  const EXT = { 'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','video/mp4':'mp4','video/webm':'webm','audio/mpeg':'mp3','audio/mp4':'m4a','audio/ogg':'ogg','audio/wav':'wav','application/pdf':'pdf','application/zip':'zip','application/vnd.android.package-archive':'apk' };
+  function fileNameFor(url, base, type){
+    let n = '';
+    try { n = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || ''); } catch (e) {}
+    if (/\.[a-z0-9]{2,5}$/i.test(n) && n.length <= 80) return n;
+    const ext = EXT[(type || '').split(';')[0].trim().toLowerCase()] || (/^(blob|data):/.test(url) ? 'png' : 'bin');
+    return (base || 'clarity-hasil') + '.' + ext;
+  }
+  function triggerSave(href, name){
+    const a = document.createElement('a'); a.href = href; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  App.saveFile = async function saveFile(url, base, btn){
+    if (!url) return;
+    const html = btn ? btn.innerHTML : '';
+    const set = h => { if (btn) btn.innerHTML = h; };
+    if (btn){ if (btn.dataset.busy) return; btn.dataset.busy = '1'; }
+    set(ICON.download + 'Mengunduh…');
+    try {
+      if (/^(blob|data):/.test(url)){ triggerSave(url, fileNameFor(url, base, '')); }
+      else {
+        let blob = null, name = '';
+        try { const r = await fetch(url, { referrerPolicy:'no-referrer' }); if (r.ok){ blob = await r.blob(); name = fileNameFor(url, base, blob.type); } } catch (e) {}
+        if (!blob){
+          const nm = fileNameFor(url, base, '');
+          const r = await fetch('/api/dl?url=' + encodeURIComponent(url) + '&name=' + encodeURIComponent(nm));
+          if (!r.ok) throw new Error('proxy');
+          blob = await r.blob(); name = fileNameFor(url, base, blob.type);
+        }
+        const href = URL.createObjectURL(blob); triggerSave(href, name); setTimeout(() => URL.revokeObjectURL(href), 20000);
+      }
+      set(ICON.check + 'Tersimpan');
+    } catch (e) {
+      window.open(url, '_blank', 'noopener');
+      set(ICON.download + 'Dibuka di tab baru');
+    }
+    setTimeout(() => { if (btn){ btn.innerHTML = html; delete btn.dataset.busy; } }, 2200);
+  };
+
   /* ========== Render hasil ke #toolOut ========== */
-  App.renderResult = function renderResult(container, kind, payload){
+  function renderResultInner(container, kind, payload){
     container.innerHTML = '';
     if (kind === 'image-compare' || kind === 'video-compare'){
       if (kind === 'video-compare'){
-        container.innerHTML = `<div class="shots"><div class="shot"><h2>Before</h2><video id="rBefore" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video></div><div class="shot"><h2>After</h2><video id="rAfter" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video><p class="cmp-warn" id="rAfterWarn" hidden>Video gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a></div></div></div>`;
+        container.innerHTML = `<div class="shots"><div class="shot"><h2>Before</h2><video id="rBefore" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video></div><div class="shot"><h2>After</h2><video id="rAfter" controls playsinline preload="metadata" referrerpolicy="no-referrer"></video><p class="cmp-warn" id="rAfterWarn" hidden>Video gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><button class="mini" type="button" id="rSave">${ICON.download}Download</button><a class="mini ghost" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a></div></div></div>`;
         $('#rBefore').src = payload.before; $('#rAfter').src = payload.after; $('#rOpen').href = payload.after;
         $('#rAfter').addEventListener('error', () => { $('#rAfterWarn').hidden = false; });
         return;
@@ -388,7 +428,7 @@
       const wrap = document.createElement('div');
       wrap.appendChild(App.makeSlider(payload.before, payload.after));
       const cap = document.createElement('div'); cap.className = 'cmp-cap';
-      cap.innerHTML = `<span>Geser garis untuk membandingkan</span><span class="btns"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></span>`;
+      cap.innerHTML = `<span>Geser garis untuk membandingkan</span><span class="btns"><button class="mini" type="button" id="rSave">${ICON.download}Download</button><a class="mini ghost" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></span>`;
       wrap.appendChild(cap); container.appendChild(wrap);
       const a = $('#rOpen'); a.href = payload.after;
       if (payload.after.startsWith('blob:')){ a.download = 'hasil'; const rc = $('#rCopy'); if (rc) rc.remove(); }
@@ -397,12 +437,12 @@
     }
     if (kind === 'three-shots'){
       container.innerHTML = `<div class="shots">${payload.shots.map((s, i) =>
-        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${s.src}" alt="${esc(s.label || '')}" referrerpolicy="no-referrer" onerror="this.insertAdjacentHTML('afterend','<p class=&quot;cmp-warn&quot;>Gambar gagal dimuat di sini.</p>');this.remove()"></div>`
+        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${s.src}" alt="${esc(s.label || '')}" referrerpolicy="no-referrer" onerror="this.insertAdjacentHTML('afterend','<p class=&quot;cmp-warn&quot;>Gambar gagal dimuat di sini.</p>');this.remove()"><div class="acts"><button class="mini" type="button" data-save="${s.src}">${ICON.download}Download</button></div></div>`
       ).join('')}</div>`;
       return;
     }
     if (kind === 'image-single'){
-      container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><img id="rImg" alt="Hasil" referrerpolicy="no-referrer"><p class="cmp-warn" id="rImgWarn" hidden>Gambar gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><a class="mini" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></div></div></div>`;
+      container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><img id="rImg" alt="Hasil" referrerpolicy="no-referrer"><p class="cmp-warn" id="rImgWarn" hidden>Gambar gagal dimuat di sini. Pakai tombol "Buka hasil" di bawah.</p><div class="acts"><button class="mini" type="button" id="rSave">${ICON.download}Download</button><a class="mini ghost" id="rOpen" target="_blank" rel="noopener noreferrer">${ICON.open}Buka hasil</a><button class="mini ghost" type="button" id="rCopy" aria-label="Salin link hasil">${ICON.copy}</button></div></div></div>`;
       $('#rImg').src = payload.image; $('#rOpen').href = payload.image;
       $('#rImg').addEventListener('error', () => { $('#rImgWarn').hidden = false; });
       if (payload.image.startsWith('blob:')){ $('#rOpen').download = 'hasil'; const rc = $('#rCopy'); if (rc) rc.remove(); }
@@ -411,13 +451,14 @@
     }
     if (kind === 'text'){
       if (payload.image){
-        container.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt="" referrerpolicy="no-referrer"></div><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button></div></div></div>`;
+        container.innerHTML = `<div class="shots"><div class="shot"><h2>Gambar</h2><img id="rBefore" alt="" referrerpolicy="no-referrer"></div><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button><button type="button" id="rSaveText">${ICON.download}Simpan .txt</button></div></div></div>`;
         $('#rBefore').src = payload.image;
       } else {
-        container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button></div></div></div>`;
+        container.innerHTML = `<div class="shots"><div class="shot"><h2>Hasil</h2><div class="textres" id="rText"></div><div class="acts"><button type="button" id="rCopyText">${ICON.copy}Salin</button><button type="button" id="rSaveText">${ICON.download}Simpan .txt</button></div></div></div>`;
       }
       App.typer($('#rText'), payload.text);
       $('#rCopyText').onclick = e => App.copyText(payload.text, e.currentTarget, ICON.check + 'Tersalin');
+      $('#rSaveText').onclick = e => { const u = URL.createObjectURL(new Blob([payload.text], { type:'text/plain;charset=utf-8' })); triggerSave(u, 'clarity-hasil.txt'); setTimeout(() => URL.revokeObjectURL(u), 20000); };
       return;
     }
     if (kind === 'kv'){
@@ -432,10 +473,18 @@
         : ICON.link2;
       const isImg = url => /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
       container.innerHTML = `<div class="dllist">${payload.links.map((l, i) =>
-        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><a class="dlbtn" href="${l.url}" target="_blank" rel="noopener noreferrer" download>${ICON.download}Buka</a></div>`
-      ).join('')}</div><p class="fine">Sebagian platform tidak mengizinkan unduh otomatis lewat browser — kalau tombol cuma membuka file di tab baru, tahan gambar/video lalu pilih simpan.</p>`;
+        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><button class="dlbtn" type="button" data-save="${l.url}">${ICON.download}Download</button><a class="dlopen" href="${l.url}" target="_blank" rel="noopener noreferrer" aria-label="Buka di tab baru">${ICON.open}</a></div>`
+      ).join('')}</div><p class="fine">Kalau file tidak bisa diunduh otomatis, file akan dibuka di tab baru. Tahan gambar atau video lalu pilih simpan.</p>`;
       return;
     }
+  }
+  App.renderResult = function renderResult(container, kind, payload){
+    renderResultInner(container, kind, payload);
+    const main = payload && (payload.after || payload.image);
+    const sv = container.querySelector('#rSave'); if (sv && main) sv.dataset.save = main;
+    container.querySelectorAll('[data-save]').forEach((b, i) => {
+      b.addEventListener('click', e => { e.preventDefault(); App.saveFile(b.dataset.save, 'clarity-' + (i + 1), b); });
+    });
   };
 
   /* ========== Field engine generik (dipakai alat gambar/video + tools menu + downloader) ========== */
