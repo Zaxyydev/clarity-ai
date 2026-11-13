@@ -589,6 +589,44 @@
     }
   }
 
+  /* ========== Banner halaman (di bawah judul, di atas isi) ==========
+     Urutan cari: banner/<kunci>.mp4 / .jpg / .png / .webp (kunci = kategori-id, contoh t-upscale),
+     lalu banner bersama banner/Noir.mp4 untuk semua halaman. Video main sendiri, tanpa suara, diulang terus.
+     Kalau semuanya belum ada, yang tampil banner polos berwarna sesuai alat. */
+  const BANNER_SHARED = 'banner/Noir.mp4';
+  const bannerMiss = new Set();   // file yang sudah terbukti nggak ada, biar nggak dicek berulang
+  App.setBanner = function setBanner(box, item, navKey){
+    if (!box) return;
+    const token = navKey + ':' + Date.now(); box.dataset.token = token;
+    box.hidden = false;
+    const old = box.querySelector('video'); if (old){ old.pause(); old.removeAttribute('src'); old.load(); }
+    box.innerHTML = `<div class="banner-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg></div>`;
+    const list = ['mp4', 'jpg', 'png', 'webp'].map(e => `banner/${navKey}.${e}`).concat(BANNER_SHARED).filter(s => !bannerMiss.has(s));
+    let i = 0;
+    const show = node => { if (box.dataset.token !== token) return false; box.innerHTML = ''; box.appendChild(node); return true; };
+    const tryNext = () => {
+      if (box.dataset.token !== token || i >= list.length) return;
+      const src = list[i++];
+      const miss = () => { bannerMiss.add(src); tryNext(); };
+      if (/\.mp4$/i.test(src)){
+        const v = document.createElement('video');
+        v.muted = true; v.defaultMuted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+        v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('loop', ''); v.setAttribute('autoplay', '');
+        v.disablePictureInPicture = true; v.controls = false; v.preload = 'auto';
+        v.setAttribute('aria-label', item.name);
+        v.onloadeddata = () => { if (show(v)){ const p = v.play(); if (p && p.catch) p.catch(() => {}); } };
+        v.onerror = miss;
+        v.src = src;
+      } else {
+        const im = new Image();
+        im.onload = () => { im.alt = item.name; im.decoding = 'async'; show(im); };
+        im.onerror = miss;
+        im.src = src;
+      }
+    };
+    tryNext();
+  };
+
   App.openToolPage = function openToolPage(el, item, navKey){
     // el: {view,hero,form,fields,status,out,steps,fine,goBtn}
     if (state.job){ state.job.abort(); state.job = null; }
@@ -596,6 +634,7 @@
     el.view.style.setProperty('--tool', item.color);
     el.view.scrollTop = 0;
     el.hero.innerHTML = heroHtml(item);
+    App.setBanner(el.banner, item, navKey);
     el.status.hidden = true; el.status.textContent = '';
     el.fine.textContent = item.fine || '';
     el.steps.innerHTML = (item.steps || []).map((s, i) => `<div class="step"><i>${i + 1}</i><span>${s}</span></div>`).join('');
@@ -753,7 +792,7 @@
   /* ========== Boot ========== */
   App.boot = function boot(){
     App.toolEl = {
-      view: $('#toolView'), hero: $('#toolHero'), form: $('#toolForm'), fields: $('#toolFields'),
+      view: $('#toolView'), hero: $('#toolHero'), banner: $('#toolBanner'), form: $('#toolForm'), fields: $('#toolFields'),
       status: $('#toolStatus'), out: $('#toolOut'), steps: $('#toolSteps'), fine: $('#toolFine'), goBtn: $('#goBtn')
     };
     buildDrawer();

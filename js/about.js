@@ -98,6 +98,7 @@
     aboutView.style.setProperty('--tool', item.color);
     aboutView.scrollTop = 0;
     aboutHero.innerHTML = App.heroHtml(item);
+    App.setBanner($('#aboutBanner'), item, 'a-' + item.id);
     aboutBody.innerHTML = BODY[item.id]();
     const im = aboutView.querySelector('.avatar img'); if (im) im.addEventListener('error', () => im.remove());
     const tc = $('#tplCopy'); if (tc) tc.onclick = e => copyText(BUG_TEMPLATE, e.currentTarget, ICON.check + 'Tersalin');
