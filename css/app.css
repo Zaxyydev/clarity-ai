@@ -361,9 +361,9 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .textres,.tpl,.kv .r span{-webkit-user-select:text;user-select:text}
 
 /* Owner (remake) */
-.own{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;padding:0 20px 24px}
+.own{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;padding:0 20px 28px;margin-top:12px}
 .own-cover{align-self:stretch;height:96px;margin:0 -20px;background:linear-gradient(120deg,var(--tool),#19c4a5 60%,color-mix(in srgb,var(--tool) 60%,#ff7ab6))}
-.own-av{margin-top:-66px;border:5px solid var(--surface)}
+.own-av{margin-top:26px}
 .own h2{margin:6px 0 0;font-size:30px;line-height:1.1}
 .own-bio{margin:2px 0 0;color:var(--muted);max-width:36ch;line-height:1.55}
 .own-grid{align-self:stretch;display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px;text-align:left}
