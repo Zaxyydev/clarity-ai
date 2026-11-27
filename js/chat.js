@@ -67,6 +67,14 @@
         return t;
       } }
   ];
+  MODELS.splice(1, 0, { id:'gemini', name:'Clarity Gemini', desc:'Ingat percakapan dalam satu obrolan, cocok buat tanya jawab panjang.',
+    run: async (q, id, signal) => {
+      const res = await App.apiFetch(`${App.BASE_IKYYXD}/ai/gemini?text=${App.enc(q)}&sessionsId=${App.enc(id)}`, { signal });
+      checkStatus(res);
+      const t = pickText(res.data).trim();
+      if (!t) throw new Error('Server membalas tanpa isi.');
+      return t;
+    } });
   const MODEL_BY_ID = {}; MODELS.forEach(m => MODEL_BY_ID[m.id] = m);
   const defaultModelId = () => store.get('clarity.lastModel', 'beta1');
 

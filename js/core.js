@@ -20,6 +20,7 @@
     set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
   };
   const esc = App.esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const escA = App.escA = s => esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const reduced = App.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const svg = App.svg = (inner, extra) => `<svg class="ic" viewBox="0 0 24 24"${extra || ''}>${inner}</svg>`;
   const ICON = App.ICON = {
@@ -70,7 +71,7 @@
       return p
         .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
         .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)"']+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     }).join('');
   }
   App.md = function md(src){
@@ -233,7 +234,7 @@
 
   App.makeRun = function makeRun(opts){
     // opts: {method:'GET'|'POST', base, path, extra?:{}}
-    const proxy = App.proxyFor(opts.base);
+    const proxy = opts.proxy !== undefined ? opts.proxy : App.proxyFor(opts.base);
     return async (vals, signal) => {
       const body = { ...vals, ...(opts.extra || {}) };
       if ((opts.method || 'GET') === 'GET'){
@@ -437,7 +438,7 @@
     }
     if (kind === 'three-shots'){
       container.innerHTML = `<div class="shots">${payload.shots.map((s, i) =>
-        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${s.src}" alt="${esc(s.label || '')}" referrerpolicy="no-referrer" onerror="this.insertAdjacentHTML('afterend','<p class=&quot;cmp-warn&quot;>Gambar gagal dimuat di sini.</p>');this.remove()"><div class="acts"><button class="mini" type="button" data-save="${s.src}">${ICON.download}Download</button></div></div>`
+        `<div class="shot"><h2>${esc(s.label || ('Gambar ' + (i + 1)))}</h2><img src="${escA(s.src)}" alt="${escA(s.label || '')}" referrerpolicy="no-referrer" onerror="this.insertAdjacentHTML('afterend','<p class=&quot;cmp-warn&quot;>Gambar gagal dimuat di sini.</p>');this.remove()"><div class="acts"><button class="mini" type="button" data-save="${escA(s.src)}">${ICON.download}Download</button></div></div>`
       ).join('')}</div>`;
       return;
     }
@@ -473,7 +474,7 @@
         : ICON.link2;
       const isImg = url => /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url);
       container.innerHTML = `<div class="dllist">${payload.links.map((l, i) =>
-        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${l.url}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><button class="dlbtn" type="button" data-save="${l.url}">${ICON.download}Download</button><a class="dlopen" href="${l.url}" target="_blank" rel="noopener noreferrer" aria-label="Buka di tab baru">${ICON.open}</a></div>`
+        `<div class="dlrow"><span class="th">${isImg(l.url) ? `<img src="${escA(l.url)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : typeIcon(l.url)}</span><span class="meta"><b>${esc(l.label)}</b><small>${esc(l.url)}</small></span><button class="dlbtn" type="button" data-save="${escA(l.url)}">${ICON.download}Download</button><a class="dlopen" href="${escA(l.url)}" target="_blank" rel="noopener noreferrer" aria-label="Buka di tab baru">${ICON.open}</a></div>`
       ).join('')}</div><p class="fine">Kalau file tidak bisa diunduh otomatis, file akan dibuka di tab baru. Tahan gambar atau video lalu pilih simpan.</p>`;
       return;
     }
@@ -683,7 +684,7 @@
         if (state.curKey !== navKey) return;
         el.out.innerHTML = `<div class="prog" role="status"><div class="row1"><span class="shimmer">${esc(item.busyText || 'Memproses…')}</span><small>${uploadFields.length ? '2 dari 2' : ''}</small></div><div class="bar"><i></i></div></div>`;
         timers.push(setTimeout(() => { why = 'timeout'; ctrl.abort(); }, item.timeoutMs || 90000));
-        const run = item.run || App.makeRun({ method: item.method || 'GET', base: item.base || App.BASE_IKYYXD, path: item.path, extra: item.extra });
+        const run = item.run || App.makeRun({ method: item.method || 'GET', base: item.base || App.BASE_IKYYXD, path: item.path, extra: item.extra, proxy: item.proxy });
         const apiRes = await run(vals, ctrl.signal);
         if (state.curKey !== navKey) return;
         const extract = item.extract || App.defaultExtract;
