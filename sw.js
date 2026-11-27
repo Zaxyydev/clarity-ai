@@ -5,7 +5,7 @@
    itu harus selalu fresh dari server. */
 'use strict';
 
-const CACHE_VERSION = 'v2'; // naikin angka ini tiap kali mau paksa klien ambil ulang shell
+const CACHE_VERSION = 'v4'; // naikin angka ini tiap kali mau paksa klien ambil ulang shell
 const CACHE_NAME = 'clarity-shell-' + CACHE_VERSION;
 
 const SHELL = [
@@ -13,12 +13,14 @@ const SHELL = [
   'index.html',
   'css/app.css',
   'js/core.js',
+  'js/jobs.js',
   'js/chat.js',
   'js/tools.js',
   'js/toolsmenu.js',
   'js/stalk.js',
   'js/maker.js',
   'js/ikyyxd.js',
+  'js/zyvor2.js',
   'js/downloader.js',
   'js/about.js',
   'manifest.webmanifest',
