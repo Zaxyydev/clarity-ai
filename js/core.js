@@ -212,6 +212,7 @@
       if (e.name === 'AbortError') throw e;
       throw new TypeError('Tidak bisa terhubung ke API. Cek koneksi internet. Kalau koneksi aman, API mungkin memblokir akses dari browser (CORS).');
     }
+    { const h = init && init.signal && App.stageHooks && App.stageHooks.get(init.signal); if (h) h('receive'); }
     if (!res.ok){
       throw new Error(res.status >= 500
         ? `Server sedang bermasalah (${res.status}). Coba lagi sebentar.`
@@ -394,24 +395,38 @@
     const html = btn ? btn.innerHTML : '';
     const set = h => { if (btn) btn.innerHTML = h; };
     if (btn){ if (btn.dataset.busy) return; btn.dataset.busy = '1'; }
-    set(ICON.download + 'Mengunduh…');
+    const nm0 = fileNameFor(url, base, '');
+    const tr = App.jobs.trackDownload(nm0, url);
+    set(ICON.download + 'Menyiapkan…');
+    // Baca bertahap supaya persentase unduhan nyata (kalau server mengirim ukuran file).
+    const read = async r => {
+      const total = +r.headers.get('content-length') || 0;
+      if (!r.body || !r.body.getReader) return r.blob();
+      const rd = r.body.getReader(), parts = []; let got = 0;
+      for (;;){
+        const { done, value } = await rd.read(); if (done) break;
+        parts.push(value); got += value.length;
+        if (total){ const p = Math.min(99, Math.floor(got / total * 100)); set(ICON.download + 'Mengunduh ' + p + '%'); tr.set(p); }
+        else { set(ICON.download + 'Mengunduh ' + App.fmtSize(got)); tr.set(-1, got); }
+      }
+      return new Blob(parts, { type: r.headers.get('content-type') || '' });
+    };
     try {
-      if (/^(blob|data):/.test(url)){ triggerSave(url, fileNameFor(url, base, '')); }
+      if (/^(blob|data):/.test(url)){ triggerSave(url, nm0); }
       else {
         let blob = null, name = '';
-        try { const r = await fetch(url, { referrerPolicy:'no-referrer' }); if (r.ok){ blob = await r.blob(); name = fileNameFor(url, base, blob.type); } } catch (e) {}
+        try { const r = await fetch(url, { referrerPolicy:'no-referrer' }); if (r.ok){ blob = await read(r); name = fileNameFor(url, base, blob.type); } } catch (e) {}
         if (!blob){
-          const nm = fileNameFor(url, base, '');
-          const r = await fetch('/api/dl?url=' + encodeURIComponent(url) + '&name=' + encodeURIComponent(nm));
+          const r = await fetch('/api/dl?url=' + encodeURIComponent(url) + '&name=' + encodeURIComponent(nm0));
           if (!r.ok) throw new Error('proxy');
-          blob = await r.blob(); name = fileNameFor(url, base, blob.type);
+          blob = await read(r); name = fileNameFor(url, base, blob.type);
         }
         const href = URL.createObjectURL(blob); triggerSave(href, name); setTimeout(() => URL.revokeObjectURL(href), 20000);
       }
-      set(ICON.check + 'Tersimpan');
+      set(ICON.check + 'Tersimpan'); tr.done();
     } catch (e) {
       window.open(url, '_blank', 'noopener');
-      set(ICON.download + 'Dibuka di tab baru');
+      set(ICON.download + 'Dibuka di tab baru'); tr.fail('Tidak bisa diunduh langsung, dibuka di tab baru.');
     }
     setTimeout(() => { if (btn){ btn.innerHTML = html; delete btn.dataset.busy; } }, 2200);
   };
@@ -561,8 +576,89 @@
     return { el: wrap, key: field.key, field, get: () => input.value.trim(), setBusy: v => { input.disabled = v; } };
   }
 
+  /* ========== Loading berputar + tahap proses nyata ========== */
+  // stages: [{label, detail}]. set(i) dipanggil saat tahap i benar-benar dimulai. Timer menghitung waktu berjalan.
+  App.progress = function progress(container, stages, limitMs, t0Arg){
+    container.innerHTML = `<div class="prog2" role="status" aria-live="polite"><div class="pg-top"><span class="spinner" aria-hidden="true"></span><div class="pg-txt"><b class="pg-title"></b><small class="pg-detail"></small></div><span class="pg-time">0 dtk</span></div><ol class="pg-steps">${stages.map(x => `<li class="pending"><i></i><span>${esc(x.label)}</span></li>`).join('')}</ol><p class="pg-hint" hidden></p></div>`;
+    const root = container.firstChild, lis = Array.from(root.querySelectorAll('li'));
+    const title = root.querySelector('.pg-title'), detail = root.querySelector('.pg-detail'), time = root.querySelector('.pg-time'), hint = root.querySelector('.pg-hint');
+    const t0 = t0Arg || Date.now();
+    const set = i => {
+      if (!stages[i]) return;
+      lis.forEach((li, k) => { li.className = k < i ? 'done' : k === i ? 'active' : 'pending'; });
+      title.textContent = stages[i].label + '…'; detail.textContent = stages[i].detail || '';
+    };
+    const timer = setInterval(() => {
+      if (!root.isConnected){ clearInterval(timer); return; }
+      const sec = Math.round((Date.now() - t0) / 1000);
+      time.textContent = sec < 60 ? sec + ' dtk' : Math.floor(sec / 60) + ' mnt ' + (sec % 60) + ' dtk';
+      if (sec >= 20){
+        hint.hidden = false;
+        hint.textContent = limitMs && limitMs > 120000 ? 'Video atau file besar bisa memakan waktu beberapa menit. Jangan tutup halaman ini.' : 'Masih diproses. Kalau server sedang ramai, ini bisa lebih lama dari biasanya.';
+      }
+    }, 1000);
+    set(0);
+    return { set, stop: () => clearInterval(timer) };
+  };
+
+  /* ========== Bantuan (?) : kegunaan + cara pakai, dibuat otomatis dari field alat ========== */
+  const OUT_TIP = {
+    'image-compare': 'Hasil tampil sebagai gambar Before/After. Geser garis untuk membandingkan, lalu tekan Download.',
+    'video-compare': 'Hasil tampil sebagai video Before dan After. Putar keduanya, lalu tekan Download.',
+    'image-single': 'Hasil berupa satu gambar. Tekan Download untuk menyimpan, atau salin link-nya.',
+    'three-shots': 'Hasil tampil berdampingan dengan foto yang kamu pilih. Tekan Download pada gambar hasil.',
+    'text': 'Hasil berupa teks. Tekan Salin atau Simpan .txt.',
+    'kv': 'Hasil tampil sebagai daftar info (label dan isinya).',
+    'links': 'Hasil berupa daftar link. Tekan Download pada link yang kamu mau.'
+  };
+  App.helpFor = function helpFor(item){
+    const out = { guna: item.desc || '', steps: [], notes: [] };
+    if (item.helpSteps){ out.steps = item.helpSteps.slice(); }
+    else if (item.fields){
+      let up = false;
+      item.fields.forEach(f => {
+        const lab = String(f.label || f.key).replace(/\s*\(.*?\)\s*$/, '');
+        if (f.type === 'image'){ up = true; out.steps.push(/^pilih/i.test(lab) ? 'Ketuk kotak dan pilih gambar dari galeri.' : `Ketuk kotak dan pilih gambar: ${lab.toLowerCase()}.`); }
+        else if (f.type === 'video'){ up = true; out.steps.push('Ketuk kotak dan pilih video dari galeri.'); }
+        else if (f.type === 'file'){ up = true; out.steps.push(/^pilih/i.test(lab) ? 'Ketuk kotak dan pilih file dari perangkat.' : `Ketuk kotak dan pilih file: ${lab.toLowerCase()}.`); }
+        else if (f.type === 'select'){ out.steps.push(`Atur "${lab}" sesuai kebutuhan${f.default ? ' (bawaan sudah terisi)' : ''}.`); }
+        else {
+          const opt = /opsional/i.test(f.label || '');
+          const ex = f.placeholder ? ` Contoh: ${f.placeholder}` : '';
+          out.steps.push(`Isi "${lab}"${opt ? ' kalau perlu, boleh dikosongkan' : ''}.${f.default && !opt ? ' Bawaannya sudah terisi, ganti kalau perlu.' : ex}`);
+        }
+      });
+      out.steps.push(`Tekan tombol "${item.goLabel || 'Proses'}" dan tunggu. Tahap prosesnya tampil langsung.`);
+      if (OUT_TIP[item.kind]) out.steps.push(OUT_TIP[item.kind]);
+      if (up) out.notes.push('File diunggah sementara ke layanan penyimpanan (catbox.moe atau uguu.se) supaya bisa diproses. Jangan unggah file yang rahasia.');
+    }
+    if (item.fine) out.notes.push(item.fine);
+    if (item.help) out.notes.push(item.help);
+    return out;
+  };
+  let helpEl = null;
+  function closeHelp(){ if (helpEl){ helpEl.hidden = true; document.body.classList.remove('help-open'); } }
+  App.showHelp = function showHelp(item){
+    item = item || App.chatHelp; if (!item) return;
+    if (!helpEl){
+      helpEl = document.createElement('div'); helpEl.id = 'helpSheet'; helpEl.hidden = true; document.body.appendChild(helpEl);
+      helpEl.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeHelp(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+    }
+    const h = App.helpFor(item);
+    helpEl.innerHTML = `<div class="hs-scrim" data-close></div><div class="hs-card" role="dialog" aria-modal="true" aria-label="Bantuan ${escA(item.name)}"><div class="hs-grab"></div>`
+      + `<div class="hs-head"><span class="hs-ic" style="background:${escA(item.color || '#0b9c84')}">${svg(item.icon || '')}</span><div><small>Bantuan</small><h2>${esc(item.name)}</h2></div><button class="hs-x" type="button" data-close aria-label="Tutup">${svg('<path d="M6 6l12 12M18 6L6 18"/>')}</button></div>`
+      + `<h3>Kegunaan</h3><p>${esc(h.guna)}</p>`
+      + (h.steps.length ? `<h3>Cara pakai</h3><ol class="hs-steps">${h.steps.map(x => `<li><span>${esc(x)}</span></li>`).join('')}</ol>` : '')
+      + (h.notes.length ? `<h3>Catatan</h3><ul class="hs-notes">${h.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
+      + `</div>`;
+    helpEl.hidden = false; document.body.classList.add('help-open');
+    const x = helpEl.querySelector('.hs-x'); if (x) x.focus();
+  };
+
   /* ========== Render halaman alat (tools/toolsmenu/downloader pakai ini) ========== */
   const heroHtml = item =>
+    (item.fields ? '<button class="helpbtn" type="button" aria-label="Bantuan: kegunaan dan cara pakai">?</button>' : '') +
     `<div class="hero-dots"></div><span class="fl f1"></span><span class="fl f2"></span><span class="fl f3"></span>` +
     `<svg class="hero-ghost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>` +
     `<div class="hero-badge">${svg(item.icon)}</div><h1>${esc(item.name)}</h1><p>${esc(item.desc)}</p>`;
@@ -630,11 +726,12 @@
 
   App.openToolPage = function openToolPage(el, item, navKey){
     // el: {view,hero,form,fields,status,out,steps,fine,goBtn}
-    if (state.job){ state.job.abort(); state.job = null; }
+    App.jobs.unmountAll();
     state.curKey = navKey;
     el.view.style.setProperty('--tool', item.color);
     el.view.scrollTop = 0;
     el.hero.innerHTML = heroHtml(item);
+    const hb = el.hero.querySelector('.helpbtn'); if (hb) hb.onclick = () => App.showHelp(item);
     App.setBanner(el.banner, item, navKey);
     el.status.hidden = true; el.status.textContent = '';
     el.fine.textContent = item.fine || '';
@@ -659,52 +756,24 @@
     el.goBtn.textContent = item.goLabel || 'Proses';
     el.goBtn.disabled = uploadFields.length > 0;
 
-    showSample(el.out, item);
-
     function setBusy(v){ built.forEach(b => b.setBusy(v)); el.goBtn.disabled = v || (uploadFields.length && !uploadFields.every(b => b.hasValue())); }
-
-    async function submit(ev){
+    const J = App.jobs;
+    const shown = J.takeShow(navKey) || J.runningFor(navKey);
+    if (shown){
+      J.mount(shown, el.out, () => setBusy(false));
+      if (shown.status === 'running') setBusy(true);
+    } else showSample(el.out, item);
+    el.form.onsubmit = ev => {
       if (ev) ev.preventDefault();
       if (el.goBtn.disabled) return;
-      const ctrl = new AbortController(); state.job = ctrl;
-      let why = '';
-      setBusy(true); statusMsg(el, '');
-      const timers = [];
-      try {
-        const vals = {}, previews = {};
-        for (const b of built){
-          if (b.field.type === 'image' || b.field.type === 'video' || b.field.type === 'file'){
-            el.out.innerHTML = `<div class="prog" role="status"><div class="row1"><span class="shimmer">Mengunggah file…</span><small>1 dari 2</small></div><div class="bar"><i></i></div></div>`;
-            previews[b.key] = b.preview();
-            vals[b.key] = await b.upload(ctrl.signal);
-          } else {
-            vals[b.key] = b.get();
-          }
-        }
-        if (state.curKey !== navKey) return;
-        el.out.innerHTML = `<div class="prog" role="status"><div class="row1"><span class="shimmer">${esc(item.busyText || 'Memproses…')}</span><small>${uploadFields.length ? '2 dari 2' : ''}</small></div><div class="bar"><i></i></div></div>`;
-        timers.push(setTimeout(() => { why = 'timeout'; ctrl.abort(); }, item.timeoutMs || 90000));
-        const run = item.run || App.makeRun({ method: item.method || 'GET', base: item.base || App.BASE_IKYYXD, path: item.path, extra: item.extra, proxy: item.proxy });
-        const apiRes = await run(vals, ctrl.signal);
-        if (state.curKey !== navKey) return;
-        const extract = item.extract || App.defaultExtract;
-        const payload = extract(apiRes, item, vals, previews);
-        App.renderResult(el.out, item.kind, payload);
-      } catch(err){
-        if (state.curKey !== navKey) return;
-        el.out.innerHTML = '';
-        if (err.name === 'AbortError') statusMsg(el, why === 'timeout' ? 'Terlalu lama menunggu. Coba lagi atau pakai file yang lebih kecil.' : 'Dibatalkan.');
-        else statusMsg(el, err.message || 'Terjadi kesalahan.');
-      } finally {
-        timers.forEach(clearTimeout);
-        if (state.job === ctrl) state.job = null;
-        if (state.curKey === navKey) setBusy(false);
-      }
-    }
-    el.form.onsubmit = submit;
+      statusMsg(el, '');
+      const job = J.start({ navKey, item, built });
+      J.mount(job, el.out, () => setBusy(false));
+      setBusy(true);
+    };
   };
   function statusMsg(el, text){ el.status.hidden = !text; el.status.textContent = text || ''; }
-  App.leaveToolPage = function leaveToolPage(){ if (state.job){ state.job.abort(); state.job = null; } state.curKey = null; };
+  App.leaveToolPage = function leaveToolPage(){ App.jobs.unmountAll(); state.curKey = null; };
 
   /* ========== Registry kategori (drawer) ========== */
   const SECTIONS = App.SECTIONS = [];
@@ -731,11 +800,11 @@
     nav.innerHTML = SECTIONS.map(sec => `
       <button class="nav" id="nav_${sec.key}" type="button" aria-expanded="false" aria-controls="list_${sec.key}">
         <svg class="ic" viewBox="0 0 24 24">${sec.icon}</svg>
-        <span class="grow">${esc(sec.label)}</span>
+        <span class="grow">${esc(sec.label)}</span><span class="cnt">${sec.items.length}</span>
         <svg class="ic chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div class="subwrap"><div id="list_${sec.key}">${sec.items.map(it =>
-        `<a class="sub" href="#${sec.key}-${it.id}" data-key="${sec.key}-${it.id}"><i style="background:${it.color}">${svg(it.icon)}</i>${esc(it.name)}</a>`
+        `<a class="sub" href="#${sec.key}-${it.id}" data-key="${sec.key}-${it.id}" data-s="${escA((it.name + ' ' + (it.desc || '')).toLowerCase())}"><i style="background:${it.color}">${svg(it.icon)}</i>${esc(it.name)}</a>`
       ).join('')}</div></div>
     `).join('');
     SECTIONS.forEach(sec => {
@@ -764,10 +833,12 @@
     const item = sec && sec.items.find(x => x.id === id);
     return item ? { sec, item } : null;
   }
+  App.findItem = findItem;
   App.route = function route(){
     const hash = location.hash.slice(1);
     if (hash === 'tools' || hash === 'upscale'){ history.replaceState(null, '', '#t-upscale'); return App.route(); }
     const found = findItem(hash);
+    App.curItem = found ? found.item : null;
     document.body.classList.remove('view-tool', 'view-about');
     if (found) document.body.classList.add(found.sec.viewClass || 'view-tool');
     App.closeDrawer();
@@ -799,6 +870,19 @@
     buildDrawer();
     initProtection();
     $('#menuBtn').addEventListener('click', App.openDrawer);
+    $('#helpBtn').addEventListener('click', () => App.showHelp(App.curItem || App.chatHelp));
+    const dq = $('#dq');
+    dq.addEventListener('input', () => {
+      const q = dq.value.trim().toLowerCase();
+      $('#drawer').classList.toggle('searching', !!q);
+      SECTIONS.forEach(sec => {
+        const subs = App.$$('#list_' + sec.key + ' .sub');
+        let n = 0; subs.forEach(a => { const hit = !q || a.dataset.s.includes(q); a.hidden = !hit; if (hit) n++; });
+        const btn = $('#nav_' + sec.key); btn.hidden = !!q && n === 0;
+        btn.setAttribute('aria-expanded', q && n ? 'true' : 'false');
+      });
+      if (!q) App.markNav(location.hash.slice(1));
+    });
     $('#scrim').addEventListener('click', App.closeDrawer);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') App.closeDrawer(); });
     App.route();

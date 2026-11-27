@@ -75,6 +75,25 @@
       if (!t) throw new Error('Server membalas tanpa isi.');
       return t;
     } });
+  const ZYM = (id, name, desc, path, body) => ({ id, name, desc, run: async (q, sid, signal) => {
+    const res = await zyPost(path, body(q, sid), signal);
+    checkStatus(res);
+    const t = pickText(res.data).trim();
+    if (!t) throw new Error('Server membalas tanpa isi.');
+    return t;
+  } });
+  MODELS.push(
+    ZYM('search', 'Clarity Search', 'Menjawab dengan bantuan pencarian web, cocok buat info terbaru.', '/api/ai/cloudai', q => ({ teks:q, needSearch:'true' })),
+    ZYM('deep', 'Clarity Deep', 'Model DeepSeek V3 buat pertanyaan yang butuh penalaran.', '/api/ai/deepseek-v3', q => ({ teks:q })),
+    ZYM('ask', 'Clarity Ask', 'Tanya jawab ringkas, ingat percakapan dalam satu obrolan.', '/api/ai/askme', (q, sid) => ({ text:q, session:sid })),
+    ZYM('duck', 'Clarity Duck', 'Model ringan lewat DuckAI, cepat dan ringkas.', '/api/ai/duckai', q => ({ text:q, model:'mistral-small-2603' })),
+    ZYM('luna', 'Clarity Luna', 'Model GPT generasi baru buat obrolan umum.', '/api/ai/aichatting', q => ({ text:q, model:'gpt-5.6-luna' })),
+    ZYM('dola', 'Clarity Dola', 'Model alternatif buat tanya jawab santai.', '/api/ai/dola', q => ({ text:q, new:'false' }))
+  );
+  App.chatHelp = { name:'Obrolan AI', color:'#0fb89b', icon:'<path d="M12 20.5c-1.6 0-3.1-.4-4.4-1.2L3.5 20.5l1.3-3.6A8.3 8.3 0 0 1 3.5 12 8.5 8.5 0 1 1 12 20.5z"/>',
+    desc:'Ngobrol dengan asisten AI: tanya apa saja, minta bantuan menulis, menjelaskan, atau coding.',
+    helpSteps:['Pilih model AI lewat menu nama di bagian atas. Tiap model punya gaya dan keunggulan sendiri.','Ketik pertanyaan di kolom bawah, lalu tekan tombol kirim.','Tunggu jawaban. Tahap prosesnya tampil di atas jawaban.','Tekan ikon salin untuk menyalin, atau ikon ulang untuk membuat jawaban baru.','Mau pakai alat gambar, download, atau lainnya? Buka menu di pojok kiri atas.'],
+    fine:'AI bisa keliru, jadi periksa info penting. Kalau jawaban gagal, coba ganti model.' };
   const MODEL_BY_ID = {}; MODELS.forEach(m => MODEL_BY_ID[m.id] = m);
   const defaultModelId = () => store.get('clarity.lastModel', 'beta1');
 
@@ -93,7 +112,7 @@
     const last = chat.msgs.length - 1;
     thread.innerHTML = chat.msgs.map((m, i) => {
       if (m.role === 'user') return `<div class="msg user"><div class="bubble">${esc(m.text)}</div></div>`;
-      if (m.pending) return `<div class="msg ai"><div class="think"><span class="dot"></span><span class="shimmer">Berpikir…</span></div></div>`;
+      if (m.pending) return `<div class="msg ai"><div class="think"><span class="spinner" aria-hidden="true"></span><div class="thk"><b class="stg">${esc(m.stage || 'Menghubungi server AI…')}</b><small class="tm">0 dtk</small></div></div></div>`;
       if (m.err) return `<div class="msg ai"><div class="err">${esc(m.err)}</div><div class="acts"><button type="button" data-act="retry">${ICON.retry}Coba lagi</button><button type="button" data-act="model">Ganti model AI</button></div></div>`;
       return `<div class="msg ai" data-i="${i}"><div class="ai-body">${m.reveal ? '' : md(m.text)}</div><div class="acts"><button type="button" data-act="copy" aria-label="Salin jawaban">${ICON.copy}</button>${i === last ? `<button type="button" data-act="retry" aria-label="Buat ulang jawaban">${ICON.retry}</button>` : ''}</div></div>`;
     }).join('');
@@ -160,6 +179,12 @@
     let why = '';
     c.busy = true; c.stop = () => { why = 'stop'; ctrl.abort(); };
     const timer = setTimeout(() => { why = 'timeout'; ctrl.abort(); }, 75000);
+    const t0 = Date.now();
+    const setStage = txt => { m.stage = txt; const e = thread.querySelector('.think .stg'); if (e) e.textContent = txt; };
+    const tick = setInterval(() => { const e = thread.querySelector('.think .tm'); if (e){ const sec = Math.round((Date.now() - t0) / 1000); e.textContent = sec < 60 ? sec + ' dtk' : Math.floor(sec / 60) + ' mnt ' + (sec % 60) + ' dtk'; } }, 1000);
+    const hook = s => { if (s === 'receive') setStage('Menerima jawaban…'); };
+    App.stageHooks.set(ctrl.signal, hook);
+    setStage('Menunggu ' + model.name + ' menjawab…');
     updateSend();
     try {
       const t = await model.run(q, c.id, ctrl.signal);
@@ -170,7 +195,7 @@
       else if (e instanceof TypeError) m.err = 'Tidak bisa terhubung ke server AI. Cek koneksi internet, muat ulang halaman, atau ganti model AI lewat menu di bagian atas.';
       else m.err = (e.message && e.message !== FAIL_MSG) ? e.message + ' Kalau terus gagal, muat ulang halaman atau ganti model AI.' : FAIL_MSG;
     } finally {
-      clearTimeout(timer);
+      clearTimeout(timer); clearInterval(tick);
       m.pending = false; c.busy = false; c.stop = null;
       c.ts = Date.now(); save();
       if (chat && chat.id === c.id) render(); else App.renderChatList();
