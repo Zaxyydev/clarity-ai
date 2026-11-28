@@ -4,11 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#080b16">
-<title>CLARITY AI</title>\n<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">\n<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>CLARITY AI</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=20261128brand5">
+<link rel="stylesheet" href="css/app.css?v=20261128workspace6">
 </head>
 <body>
 <div id="app">
@@ -37,8 +39,24 @@
       <svg class="spk a" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
       <svg class="spk b" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
       <svg class="spk c" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/></svg>
-      <h1>CLARITY <b>AI</b></h1>
-      <p>Tanya apa saja, jawabannya jernih.</p>
+      <div class="home-intro">
+        <div class="home-mark"><img src="icons/logo-mark.svg" alt="CLARITY AI"></div>
+        <div class="home-kicker"><span class="live-dot"></span> YOUR AI WORKSPACE</div>
+        <h1>Selamat datang di <strong>CLARITY AI</strong><span class="home-spark"> ✦</span></h1>
+        <p>Tanya, eksplorasi, dan buat sesuatu. Semua alat favoritmu ada di satu tempat.</p>
+      </div>
+      <div class="home-shortcuts" id="homeQuickTools">
+        <div class="quick-head"><span>Quick tools</span><small>PILIH FITUR</small></div>
+        <div class="quick-grid">
+          <button type="button" class="quick-tool" data-section="t"><i class="qt-icon qt-purple">▧</i><span><b>AI Image & Video</b><small>Buat dan olah visual</small></span><em>↗</em></button>
+          <button type="button" class="quick-tool" data-section="m"><i class="qt-icon qt-blue">⌘</i><span><b>Tools</b><small>Generator & utilitas</small></span><em>↗</em></button>
+          <button type="button" class="quick-tool" data-section="d"><i class="qt-icon qt-green">↓</i><span><b>Downloader</b><small>Unduh media</small></span><em>↗</em></button>
+          <button type="button" class="quick-tool" data-section="k"><i class="qt-icon qt-pink">✧</i><span><b>AI Maker</b><small>Kreasi teks & konten</small></span><em>↗</em></button>
+          <button type="button" class="quick-tool" data-section="s"><i class="qt-icon qt-cyan">⌕</i><span><b>Stalk Account</b><small>Cari info akun publik</small></span><em>↗</em></button>
+          <button type="button" class="quick-tool" data-section="a"><i class="qt-icon qt-gold">ⓘ</i><span><b>About website</b><small>Info CLARITY AI</small></span><em>↗</em></button>
+        </div>
+      </div>
+      <div class="home-footnote"><span>✦</span> Pilih alat untuk membukanya, atau langsung mulai chat di bawah.</div>
     </div>
     <div id="thread" aria-live="polite"></div>
   </main>
@@ -109,6 +127,18 @@
 <script src="js/ikyyxd.js?v=20261128c"></script>
 <script src="js/zyvor2.js?v=20261128c"></script>
 <script src="js/about.js?v=20261128c"></script>
-<script>App.boot();</script>
+<script>
+  App.boot();
+  document.querySelectorAll('.quick-tool[data-section]').forEach(button => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.section;
+      if (!document.body.classList.contains('drawer-open')) App.openDrawer();
+      const nav = document.getElementById('nav_' + key);
+      if (nav) nav.setAttribute('aria-expanded', 'true');
+      const target = document.getElementById('nav_' + key);
+      if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  });
+</script>
 </body>
 </html>
