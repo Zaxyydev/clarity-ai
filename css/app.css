@@ -628,3 +628,129 @@ header .modelmenu .mi{border-radius:12px;padding:11px 12px}header .modelmenu .mi
 @media(max-width:600px){header{min-height:60px;gap:7px;margin:8px 0 9px;padding:8px;border-radius:19px}header .circle{flex-basis:40px;width:40px;height:40px;border-radius:14px}header .circle .ic{width:19px;height:19px}header .brand{height:40px;padding-inline:9px;gap:6px;border-radius:14px;font-size:13px}header .brand>svg:first-child{width:17px!important;height:17px!important;flex-basis:17px}header .brand .chev{width:14px!important;height:14px!important}header .modelmenu{top:calc(100% + 9px)}}
 @media(max-width:360px){header{gap:5px;padding:7px}header .circle{flex-basis:37px;width:37px;height:37px}header .brand{padding-inline:7px;font-size:12px;gap:5px}}
 @media(prefers-reduced-motion:reduce){header .circle,header .brand{transition:none}}
+
+
+/* CLARITY LIQUID GLASS — v4
+   Layered translucent surfaces, specular edges, soft refraction-like color flow. */
+:root{
+  --lg-line:rgba(218,226,255,.22);
+  --lg-hi:rgba(255,255,255,.24);
+  --lg-shadow:0 18px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.18);
+}
+body{
+  background:
+    radial-gradient(ellipse at 14% 12%,rgba(115,93,255,.19),transparent 38%),
+    radial-gradient(ellipse at 88% 28%,rgba(48,194,220,.13),transparent 36%),
+    radial-gradient(ellipse at 48% 100%,rgba(116,84,218,.12),transparent 42%),
+    var(--bg);
+  background-attachment:fixed;
+}
+header{
+  overflow:hidden;
+  background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 42%,rgba(105,133,219,.09))!important;
+  border-color:rgba(213,224,255,.23)!important;
+  box-shadow:0 14px 42px rgba(0,0,0,.23),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.05)!important;
+  backdrop-filter:blur(34px) saturate(190%) contrast(108%)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(190%) contrast(108%)!important;
+}
+header:before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(112deg,rgba(255,255,255,.17),transparent 26%,transparent 66%,rgba(112,211,255,.09));
+  opacity:.8;
+}
+header .circle,header .brand{
+  overflow:hidden;
+  position:relative;
+  background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.045) 55%,rgba(122,145,255,.09))!important;
+  border-color:rgba(223,230,255,.25)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.07),0 7px 18px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(22px) saturate(190%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(190%)!important;
+}
+header .circle:before,header .brand:before,.starter:before,.composer:before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(118deg,rgba(255,255,255,.24),transparent 30%,transparent 68%,rgba(139,202,255,.09));
+  opacity:.7;
+}
+header .circle:hover,header .brand:hover{transform:translateY(-1px);filter:brightness(1.13)}
+#empty{
+  position:relative;isolation:isolate;overflow:hidden;
+  border:1px solid rgba(218,226,255,.2)!important;
+  background:
+    radial-gradient(ellipse at 22% 15%,rgba(155,132,255,.22),transparent 43%),
+    radial-gradient(ellipse at 82% 76%,rgba(64,204,225,.13),transparent 48%),
+    linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 46%,rgba(112,134,220,.07))!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(32px) saturate(175%)!important;
+  -webkit-backdrop-filter:blur(32px) saturate(175%)!important;
+}
+#empty:before{
+  content:"";position:absolute;inset:1px;z-index:0;pointer-events:none;border-radius:inherit;
+  background:
+    linear-gradient(125deg,rgba(255,255,255,.19),transparent 18%,transparent 65%,rgba(130,218,255,.09)),
+    radial-gradient(ellipse at 50% -12%,rgba(255,255,255,.13),transparent 55%);
+  opacity:.95;
+}
+#empty:after{
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  width:68%;height:48%;left:-16%;top:-12%;border-radius:50%;
+  background:rgba(155,145,255,.14);filter:blur(48px);
+  animation:liquidDrift 11s ease-in-out infinite alternate;
+}
+#empty .orb{
+  width:min(62vw,390px);height:min(62vw,390px);
+  opacity:.68;filter:blur(35px) saturate(150%);
+  background:radial-gradient(circle at 35% 28%,rgba(198,188,255,.65),rgba(126,105,255,.28) 32%,rgba(64,198,226,.16) 58%,transparent 74%);
+  animation:liquidFloat 8s ease-in-out infinite;
+}
+#empty .rings{
+  width:min(58vw,340px);height:min(58vw,340px);
+  border:1px solid rgba(231,235,255,.18);
+  box-shadow:0 0 0 1px rgba(255,255,255,.035),0 0 0 28px rgba(255,255,255,.025),0 0 0 64px rgba(150,166,255,.035),inset 0 0 36px rgba(255,255,255,.045);
+  animation:ringBreath 7s ease-in-out infinite;
+}
+#empty h1,#empty p,#empty .spk{position:relative;z-index:2}
+#empty h1{text-shadow:0 2px 28px rgba(174,162,255,.17)}
+#empty p{text-shadow:0 1px 12px rgba(0,0,0,.15)}
+#empty .spk{filter:drop-shadow(0 0 10px currentColor)}
+.starter,.composer,.send,.code,.ai-body,.bubble,.nav,.newchat,.tool-card,.card{
+  backdrop-filter:blur(24px) saturate(175%);
+  -webkit-backdrop-filter:blur(24px) saturate(175%);
+}
+.starter{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(218,226,255,.18)!important;
+  background:linear-gradient(140deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 65%,rgba(105,175,255,.07))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.17),0 8px 22px rgba(0,0,0,.15)!important;
+  transition:transform .25s ease,border-color .25s ease,filter .25s ease;
+}
+.starter:active{transform:scale(.97)}
+.composer{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(220,229,255,.24)!important;
+  background:linear-gradient(140deg,rgba(255,255,255,.13),rgba(255,255,255,.045) 60%,rgba(107,165,255,.09))!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(255,255,255,.05)!important;
+  backdrop-filter:blur(30px) saturate(185%)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(185%)!important;
+}
+.composer:before{opacity:.5}
+.composer textarea,.composer .send{position:relative;z-index:1}
+.composer .send{
+  border:1px solid rgba(255,255,255,.24);
+  background:linear-gradient(145deg,rgba(161,146,255,.8),rgba(65,194,218,.72))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 5px 18px rgba(88,116,225,.24);
+}
+.bubble{border-color:rgba(222,230,255,.16)!important}
+.ai-body{border-color:rgba(222,230,255,.14)!important}
+@keyframes liquidDrift{0%{transform:translate3d(0,0,0) rotate(-8deg) scale(1)}100%{transform:translate3d(24%,18%,0) rotate(14deg) scale(1.25)}}
+@keyframes liquidFloat{0%,100%{transform:translate3d(-5px,4px,0) scale(1)}50%{transform:translate3d(9px,-12px,0) scale(1.08)}}
+@keyframes ringBreath{0%,100%{transform:scale(.97);opacity:.78}50%{transform:scale(1.035);opacity:1}}
+@media(max-width:600px){
+  #empty{min-height: min(68dvh,560px);padding:30px 18px}
+  #empty .orb{width:75vw;height:75vw}
+  #empty .rings{width:60vw;height:60vw}
+  .composer{border-radius:25px}
+}
+@media(prefers-reduced-motion:reduce){
+  #empty:after,#empty .orb,#empty .rings{animation:none!important}
+}
